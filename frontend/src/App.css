@@ -1,0 +1,18 @@
+.App {
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+  /* justify-content: center;
+  align-items: center; */
+}
+
+p, li{
+  font-family: 'Open Sans';
+  margin: 0;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  padding-left: 20px;
+}
