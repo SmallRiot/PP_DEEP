@@ -34,6 +34,7 @@ schema_view = get_schema_view(
    permission_classes=(permissions.AllowAny,),
 )
 
+
 urlpatterns = [
     path('', views.index, name='home'),
     path('api/', include('core.urls')),  # имя вашего приложения

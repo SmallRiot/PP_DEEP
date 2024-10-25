@@ -1,6 +1,18 @@
+import os
+
 from django.db import models
 
 # Create your models here.
-class TestModel(models.Model):
+class Document(models.Model):
     name = models.CharField(max_length=100)
-    description = models.TextField()
+    path = models.FileField(upload_to='documents/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.name:
+            name, ext = os.path.splitext(self.path.name)
+            self.name = name
+        super().save(*args, **kwargs)

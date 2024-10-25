@@ -1,10 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import TestModelViewSet
+from core.views import DocumentViewSet
 
 router = DefaultRouter()
-router.register(r'testmodels', TestModelViewSet)
+router.register(r'documents', DocumentViewSet, basename='document')
+
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('api/', include(router.urls)),
 ]
