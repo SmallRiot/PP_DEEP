@@ -1,14 +1,18 @@
 import "./App.css";
 import Header from "./components/Header/Header";
-import SelectBlock from "./components/SelectBlock/SelectBlock";
 import Start from "./components/Start/Start";
+import BankPage from "./components/BankPage/BankPage";
+import { Route, Routes } from "react-router-dom";
 
 function App() {
   return (
     <div className="App">
       <Header />
-      <Start />
-      <SelectBlock />
+      <Routes>
+        <Route path="" element={<Start />}></Route>
+        <Route path="bank" element={<BankPage />} />
+        {/* <Start /> */}
+      </Routes>
     </div>
   );
 }

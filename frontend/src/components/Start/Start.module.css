@@ -1,3 +1,9 @@
+.start{
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+}
+
 .wrapper {
   padding: 0px 200px 0px 200px;
   display: flex;
