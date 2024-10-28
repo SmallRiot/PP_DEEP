@@ -8,11 +8,10 @@ from core.serializers import DocumentSerializer
 
 
 def index(request):
+    if not request.session.session_key:
+        request.session.create()
     return HttpResponse("Добро пожаловать")
 
-#class DocumentViewSet(viewsets.ModelViewSet):
-#    queryset = Document.objects.all()
-#    serializer_class = DocumentSerializer
 
 class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
@@ -24,6 +23,12 @@ class DocumentViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+
+        # Устанавливаем session_id
+        request.session['session_id'] = request.session.session_key
+        serializer.instance.session_id = request.session.session_key
+        serializer.instance.save()
+
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):

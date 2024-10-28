@@ -5,6 +5,7 @@ from django.db import models
 # Create your models here.
 class Document(models.Model):
     name = models.CharField(max_length=100)
+    session_id = models.CharField(max_length=100, blank=True, null=True)  # Поле для сессии
     path = models.FileField(upload_to='documents/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
