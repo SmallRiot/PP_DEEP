@@ -19,17 +19,26 @@ class DocumentViewSet(viewsets.ModelViewSet):
     parser_classes = (MultiPartParser,)
 
     def create(self, request, *args, **kwargs):
+
+        if not request.session.session_key:
+            request.session.create()
+
+        # Устанавливаем session_id
+        session_id = request.session.session_key
+        request.session['session_id'] = session_id
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+
+        # Передаем session_id в perform_create
+        self.perform_create(serializer, session_id)
         headers = self.get_success_headers(serializer.data)
 
         # Устанавливаем session_id
-        request.session['session_id'] = request.session.session_key
-        serializer.instance.session_id = request.session.session_key
-        serializer.instance.save()
+        #serializer.instance.session_id = request.session.session_key
+        #serializer.instance.save()
 
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    def perform_create(self, serializer):
-        serializer.save()
+    def perform_create(self, serializer, session_id=None):
+        serializer.save(session_id=session_id)

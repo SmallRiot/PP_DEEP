@@ -3,4 +3,4 @@ documents
 migrations
 __pycache__
 db.sqlite3
-logs
+django.log
