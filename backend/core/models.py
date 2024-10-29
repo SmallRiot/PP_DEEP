@@ -22,25 +22,31 @@ class Document(models.Model):
             name, ext = os.path.splitext(self.path.name)
             self.name = name
 
+        ispdf = False
         final_path = f'documents/{self.session_id or "default_session"}/'
         if self.path.name.endswith('.pdf'):
+            ispdf = True
             final_path += self.name
 
         if self.path:
-            file_ext = os.path.splitext(self.path.name)[1].lower()
-            if file_ext == '.png':
-                # Сохраняем PNG по новому пути
+            if self.path.name.endswith('.png'):
+                # Для PNG не нужно никакой обработки, сохраняем напрямую
                 final_filename = f"{self.name}.png"
                 self.path.name = os.path.join(final_path, final_filename)
             else:
-                # Используем FileConverter для конвертации файлов
+                # Используем FileConverter для преобразования файла в нужный формат
                 converter = FileConverter(self.path, self.name)
-                new_content, final_filename = converter.convert_to_png()
+                converted_files = converter.process_file()
 
-                # Удаляем временный файл после обработки
+                # Удаляем исходный файл после конвертации
                 self.path.delete(save=False)
-                final_full_path = os.path.join(final_path, final_filename)
-                self.path.save(final_full_path, new_content, save=False)
 
+                # Сохраняем все конвертированные файлы
+                for file_content, filename in converted_files:
+                    file_path = os.path.join(final_path, filename)
+                    self.path.save(file_path, file_content, save=False)
+
+                if ispdf:
+                    self.path.name = final_path
 
         super().save(*args, **kwargs)
