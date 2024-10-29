@@ -1,4 +1,5 @@
-import Card from "../Card/Card";
+import { Outlet } from "react-router-dom";
+// import Card from "../Card/Card";
 import Subsequence from "../Subsequence/Subsequence";
 import classes from "./BankPage.module.css";
 
@@ -11,7 +12,8 @@ const BankPage = () => {
         </div>
         <Subsequence count={8} />
       </div>
-      <Card />
+      <Outlet />
+      {/* <Card /> */}
     </div>
   );
 };
