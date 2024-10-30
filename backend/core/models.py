@@ -33,6 +33,8 @@ class Document(models.Model):
                 # Для PNG не нужно никакой обработки, сохраняем напрямую
                 final_filename = f"{self.name}.png"
                 self.path.name = os.path.join(final_path, final_filename)
+            elif self.path.name.endswith('combined.pdf'):
+                self.path.name = os.path.join(final_path, self.path.name)
             else:
                 # Используем FileConverter для преобразования файла в нужный формат
                 converter = FileConverter(self.path, self.name)

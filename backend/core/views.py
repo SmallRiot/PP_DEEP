@@ -1,10 +1,14 @@
-from django.http import HttpResponse
+import os
+
+from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets, status
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from core.models import Document
 from core.serializers import DocumentSerializer
+from core.utils import FileConverter
 
 
 def index(request):
@@ -42,3 +46,26 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer, session_id=None):
         serializer.save(session_id=session_id)
+
+
+class CombineImagesToPDFView(APIView):
+    def get(self, request):
+        # Вызываем функцию, чтобы создать и сохранить объединенный PDF
+        try:
+            converter = FileConverter()
+            output_pdf_path = converter.convert_images_to_pdf(request.session.session_key)
+
+            # Проверка существования PDF файла
+            if not os.path.exists(output_pdf_path):
+                return JsonResponse({'error': 'PDF file could not be created.'},
+                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # Открываем созданный PDF для передачи в ответе
+            with open(output_pdf_path, 'rb') as pdf_file:
+                response = HttpResponse(pdf_file.read(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="{request.session.session_key}_combined.pdf"'
+                return response
+        except Document.DoesNotExist:
+            return JsonResponse({'error': 'Session ID not found.'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
