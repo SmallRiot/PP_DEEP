@@ -27,20 +27,16 @@ class DocumentViewSet(viewsets.ModelViewSet):
         if not request.session.session_key:
             request.session.create()
 
-        # Устанавливаем session_id
         session_id = request.session.session_key
         request.session['session_id'] = session_id
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Передаем session_id в perform_create
         self.perform_create(serializer, session_id)
         headers = self.get_success_headers(serializer.data)
 
-        # Устанавливаем session_id
-        #serializer.instance.session_id = request.session.session_key
-        #serializer.instance.save()
+
 
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -50,17 +46,15 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 class CombineImagesToPDFView(APIView):
     def get(self, request):
-        # Вызываем функцию, чтобы создать и сохранить объединенный PDF
+
         try:
             converter = FileConverter()
             output_pdf_path = converter.convert_images_to_pdf(request.session.session_key)
 
-            # Проверка существования PDF файла
             if not os.path.exists(output_pdf_path):
                 return JsonResponse({'error': 'PDF file could not be created.'},
                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            # Открываем созданный PDF для передачи в ответе
             with open(output_pdf_path, 'rb') as pdf_file:
                 response = HttpResponse(pdf_file.read(), content_type='application/pdf')
                 response['Content-Disposition'] = f'attachment; filename="{request.session.session_key}_combined.pdf"'

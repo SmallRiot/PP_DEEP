@@ -9,7 +9,6 @@ from django.conf import settings
 
 class FileConverter:
     """Класс для конвертации файлов в нужный формат."""
-
     def __init__(self, file=None, name=None):
         self.file = file
         self.name = name
@@ -56,32 +55,56 @@ class FileConverter:
         return [(ContentFile(temp_img.read()), filename)]
 
     def convert_images_to_pdf(self, session_id):
-        # Получаем путь к папке с изображениями
-        base_folder = os.path.join(settings.MEDIA_ROOT, 'documents', session_id)
 
-        # Находим все .png файлы в папке session_id, включая вложенные
+        base_folder = os.path.join(settings.MEDIA_ROOT, 'documents', session_id)
+        output_pdf_path = os.path.join(base_folder, f'{session_id}_combined.pdf')
+
+        if os.path.exists(output_pdf_path):
+            return output_pdf_path  # Возвращаем существующий путь, если файл уже создан
+
         image_files = []
         for root, dirs, files in os.walk(base_folder):
             for file in files:
                 if file.endswith(".png"):
                     image_files.append(os.path.join(root, file))
 
-        # Сортируем файлы по пути, чтобы страницы были в нужном порядке
         image_files.sort()
 
-        # Открываем изображения и конвертируем в формат, пригодный для PDF
         images = [Image.open(file).convert('RGB') for file in image_files]
 
-        # Создаем результирующий PDF
         if images:
             from core.models import Document
-            output_pdf_path = os.path.join(base_folder, f'{session_id}_combined.pdf')
             images[0].save(output_pdf_path, save_all=True, append_images=images[1:])
 
-            # Сохраняем информацию о новом PDF в базе данных, создавая новую запись
+            self.clear_dir(session_id,image_files,
+                  output_pdf_path,
+                  base_folder)
+
             Document.objects.create(
                 session_id=session_id,
                 path=output_pdf_path.replace(settings.MEDIA_ROOT, '')  # Относительный путь для хранения
             )
 
         return output_pdf_path
+
+    def clear_dir(self,session_id,
+                  image_files,
+                  output_pdf_path,
+                  base_folder):
+        from core.models import Document
+        import shutil
+
+
+        if os.path.exists(base_folder):
+            for item in os.listdir(base_folder):
+                item_path = os.path.join(base_folder, item)
+                if item_path != output_pdf_path:
+                    if os.path.isfile(item_path):
+                        os.remove(item_path)
+                    elif os.path.isdir(item_path):
+                        shutil.rmtree(item_path)
+
+        Document.objects.filter(session_id=session_id).exclude(
+            path=output_pdf_path.replace(settings.MEDIA_ROOT, '')
+        ).delete()
+
