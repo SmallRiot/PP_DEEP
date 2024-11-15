@@ -51,6 +51,26 @@ def load_img(access_token, img_path):
   else:
     return response.status_code
 
+def load_pdf(access_token, img_path):
+  url = "https://gigachat.devices.sberbank.ru/api/v1/files"
+
+  payload = {'purpose': 'general'}
+
+  files=[
+  ('file',('file',open(str(img_path),'rb'),'image/pdf'))
+  ]
+
+  headers = {
+  'Authorization': 'Bearer ' + access_token
+  }
+
+  response = requests.request("POST", url, headers=headers, data=payload, files=files, verify=False)
+
+  if response.status_code == 200:
+    return response.json()['id']
+  else:
+    return response.status_code
+
 """ Для того, чтобы не хранить персональные данные и не перегружать API, все изоюбражения удаляются после обработки """
 def delete_img(access_token, img_id):
   url = "https://gigachat.devices.sberbank.ru/api/v1/files/:" + img_id + "/delete"
@@ -102,7 +122,7 @@ def get_reciept_info(access_token, img_id):
   else:
     return response.status_code
 
-""" Обработка свидетельства о рождении """
+""" Обработка свидетельства о рождении (нормально воспринимает только pdf) """
 def get_birth_info(access_token, img_id):
 
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
@@ -112,7 +132,7 @@ def get_birth_info(access_token, img_id):
     "messages": [
       {
         "role": "user",
-        "content": "Достань из изображения информацию о названии документа, ФИО ребёнка, дату рождения ребёнка, ФИО отца и ФИО матери и ответ представь в json-формате с полями: Название документа, Дата рождения, Ребёнок: Фамилия, Имя, Отчество; Отец: Фамилия, Имя, Отчество; Мать: Фамилия, Имя, Отчество. В ответе укажи только json",
+        "content": "Достань из этого файла ФИО ребёнка, ФИО матери, ФИО отца и дату рождения. Ответ предоставь в json формате",
         "attachments": [
           img_id
         ]
@@ -179,6 +199,39 @@ def get_reference_info(access_token, img_id):
       {
         "role": "user",
         "content": "Получи информацию о дате совершения операции в формате dd.mm.yy, ФИО держателя карты и итоговой стоимости и ответ представь в json-формате с полями: Дата операции, Итоговая сумма, ФИО. В ответе укажи только json",
+        "attachments": [
+          img_id
+        ]
+      }
+    ],
+    "stream": False,
+    "update_interval": 0
+  })
+
+  headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + access_token
+  }
+
+  response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+  delete_img(acces_token, img_id)
+
+  if response.status_code == 200:
+    return response.json()['choices'][0]['message']['content']
+  else:
+    return response.status_code
+
+""" Обработка договора об оказании услуг """
+def get_contract_info(access_token, img_id):
+
+  url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+
+  payload = json.dumps({
+    "model": "GigaChat-Pro",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Получи информацию о данных мед-организации и наличие подписи и печати (В ответе подпись и печать указать как True, если есть) и ответ представь в json-формате с полями: Мед-организация, Подпись, Печать. В ответе укажи только json",
         "attachments": [
           img_id
         ]
