@@ -1,43 +1,46 @@
-import { useState } from "react";
 import classes from "./RadioButtons.module.css";
+import { useSelector, useDispatch } from "react-redux";
+import { selectOption } from "../../redux/slices/radioSlice";
 
 const RadioButtons = () => {
-  const [selected, setSelected] = useState("");
+  const dispatch = useDispatch();
+  const selected = useSelector((state) => state.radio.selectedOption);
 
-  const handleClick = (option) => {
-    if (option !== selected) {
-      setSelected(option);
-    }
-  };
-
+  console.log(selected);
   return (
     <div className={classes.block}>
       <div className={classes.radioBtn}>
         <p>Наличными</p>
-        <div className={classes.dot} onClick={() => handleClick("selected1")}>
+        <div
+          className={classes.dot}
+          onClick={() => dispatch(selectOption("cash"))}
+        >
           <span
             className={`${classes.down} ${
-              selected === "selected1" ? classes.downActive : ""
+              selected === "cash" ? classes.downActive : ""
             }`}
           ></span>
           <span
             className={`${classes.up} ${
-              selected === "selected1" ? classes.upActive : ""
+              selected === "cash" ? classes.upActive : ""
             }`}
           ></span>
         </div>
       </div>
       <div className={classes.radioBtn}>
         <p>Безналичный расчет</p>
-        <div className={classes.dot} onClick={() => handleClick("selected2")}>
+        <div
+          className={classes.dot}
+          onClick={() => dispatch(selectOption("nonCash"))}
+        >
           <span
             className={`${classes.down} ${
-              selected === "selected2" ? classes.downActive : ""
+              selected === "nonCash" ? classes.downActive : ""
             }`}
           ></span>
           <span
             className={`${classes.up} ${
-              selected === "selected2" ? classes.upActive : ""
+              selected === "nonCash" ? classes.upActive : ""
             }`}
           ></span>
         </div>

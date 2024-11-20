@@ -10,7 +10,7 @@ const BankPage = () => {
         <div className={classes.title}>
           <p>Компенсация при оплате работником Банка франшизы</p>
         </div>
-        <Subsequence count={8} />
+        <Subsequence />
       </div>
       <Outlet />
       {/* <Card /> */}

@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 import classes from "./BorderButton.module.css";
 
-const BorderButton = ({ style, path }) => {
+const BorderButton = ({ style, path, onClick }) => {
   return (
     <Link to={`/bank/${path}`} className={classes.btn} style={style}>
-      <div className={classes.content}>
+      <div className={classes.content} onClick={onClick}>
         <p>Далее</p>
         <p>→</p>
       </div>

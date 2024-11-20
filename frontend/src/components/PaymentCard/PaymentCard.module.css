@@ -19,16 +19,23 @@
 .subTitle {
   font-size: 20px;
   color: #3B3636;
+  white-space: pre-wrap;
 }
 
 .controller{
   padding: 0px 50px;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 40px;
 }
 
 .controller .question{
   font-size: 24px;
   color: #3B3636;
+}
+
+.controller .btn{
+  display: flex;
+  gap: 50px;
 }
