@@ -4,6 +4,8 @@ from PIL import Image
 from django.core.files.base import ContentFile
 from pdf2image import convert_from_bytes
 from django.conf import settings
+from PyPDF2 import PdfReader, PdfWriter
+
 
 
 
@@ -22,26 +24,8 @@ class FileConverter:
         if self.file_ext == '.png':
             # Если уже PNG, возвращаем исходный файл
             return [(self.file, self.file.name)]
-        elif self.file_ext == '.pdf':
-            return self._process_pdf()
         else:
             return self._process_image()
-
-    def _process_pdf(self):
-        """Обработка PDF файла, конвертация всех страниц в PNG."""
-        pdf_bytes = self.file.read()
-        images = convert_from_bytes(pdf_bytes)
-        png_pages = []
-
-        for i, img in enumerate(images):
-            img = img.convert("RGB")
-            temp_img = io.BytesIO()
-            img.save(temp_img, format="PNG")
-            temp_img.seek(0)
-            page_filename = f"{self.name}_page_{i + 1}.png"
-            png_pages.append((ContentFile(temp_img.read()), page_filename))
-
-        return png_pages
 
 
     def _process_image(self):
@@ -55,35 +39,61 @@ class FileConverter:
         return [(ContentFile(temp_img.read()), filename)]
 
     def convert_images_to_pdf(self, session_id):
+        from core.models import Document
 
-        base_folder = os.path.join(settings.MEDIA_ROOT, 'documents', session_id)
+        base_folder = os.path.join(settings.MEDIA_ROOT, 'backend/documents', session_id)
         output_pdf_path = os.path.join(base_folder, f'{session_id}_combined.pdf')
 
         if os.path.exists(output_pdf_path):
             return output_pdf_path  # Возвращаем существующий путь, если файл уже создан
 
         image_files = []
+
+        pdf_files = []
+
         for root, dirs, files in os.walk(base_folder):
             for file in files:
                 if file.endswith(".png"):
                     image_files.append(os.path.join(root, file))
+                elif file.endswith(".pdf"):
+                    pdf_files.append(os.path.join(root, file))
+
 
         image_files.sort()
+        pdf_files.sort()
 
-        images = [Image.open(file).convert('RGB') for file in image_files]
+        # images = [Image.open(file).convert('RGB') for file in image_files]
+        pdf_writer = PdfWriter()
 
-        if images:
-            from core.models import Document
-            images[0].save(output_pdf_path, save_all=True, append_images=images[1:])
+        for image_file in image_files:
+            image = Image.open(image_file).convert('RGB')
+            image_pdf = io.BytesIO()
+            image.save(image_pdf, format='PDF')
+            image_pdf.seek(0)
+            image_pdf_reader = PdfReader(image_pdf)
+            for page_num in range(len(image_pdf_reader.pages)):
+                pdf_writer.add_page(image_pdf_reader.pages[page_num])
 
-            self.clear_dir(session_id,image_files,
-                  output_pdf_path,
-                  base_folder)
+        for pdf_file in pdf_files:
+            with open(pdf_file, 'rb') as pdf:
+                pdf_reader = PdfReader(pdf)
+                pdf_writer.append_pages_from_reader(pdf_reader)
 
-            Document.objects.create(
-                session_id=session_id,
-                path=output_pdf_path.replace(settings.MEDIA_ROOT, '')  # Относительный путь для хранения
-            )
+        with open(output_pdf_path, 'wb') as output_pdf_file:
+            pdf_writer.write(output_pdf_file)
+
+        # if images:
+        #     from core.models import Document
+        #     images[0].save(output_pdf_path, save_all=True, append_images=images[1:])
+
+        self.clear_dir(session_id,image_files,
+              output_pdf_path,
+              base_folder)
+
+        Document.objects.create(
+            session_id=session_id,
+            path=output_pdf_path.replace(settings.MEDIA_ROOT, '')  # Относительный путь для хранения
+        )
 
         return output_pdf_path
 
@@ -91,7 +101,7 @@ class FileConverter:
                   image_files,
                   output_pdf_path,
                   base_folder):
-        from core.models import Document
+        from core.models import Document,MedicalInsurance
         import shutil
 
 
@@ -107,4 +117,9 @@ class FileConverter:
         Document.objects.filter(session_id=session_id).exclude(
             path=output_pdf_path.replace(settings.MEDIA_ROOT, '')
         ).delete()
+
+        medicalInsurance = MedicalInsurance.objects.get(session_id=session_id)
+        medicalInsurance.father.delete()
+        medicalInsurance.mother.delete()
+        medicalInsurance.delete()
 
