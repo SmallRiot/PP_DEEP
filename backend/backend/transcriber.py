@@ -1,10 +1,17 @@
 import requests
 import uuid
 import json
+from fpdf import FPDF
+from PIL import Image
 
 rquid = str(uuid.uuid4()) # Нужен для работы всех функций
-auth_token = '' # Кину отдельно, чтобы его в .env добавить
-img_path = input() # Здесь должна быть функция получения изображения с фронта
+auth_token = '' # Кину отдельно, чтобы его в .env добавить 
+# img_path = input() # Здесь должна быть функция получения изображения с фронта
+
+prompts = {'double_page': 'Получи информацию о ФИО налогоплательщика, дате его рождения, название организации, ИНН или паспортные данные, сумму расходов, ФИО выдавшего справку, ФИО ребёнка, дату рождения ребёнка, а также наличие подписи и даты. Вывод оформи в json-формате',
+           'franchise_reciept': 'Получи информацию о способе оплаты (True, если безнал), ФИО плателщьика, дата оплаты, сумма оплаты, место оплаты, наличие подписи и печати. Ответ оформи в json-формате',
+           'franchise_reference': 'Получи информацию о ФИО плательщика, дате оплаты, сумме оплаты, месте оплаты. Ответ предоставь в json-формате',
+           'isnurence_reference': 'Получи информацию о ФИО плательщика, ФИО ребёнка, годе рождения ребёнка, сроке действия страхования и номере полиса ДМС. Ответ предоставь в json-формате'}
 
 """ Токен должен быть один для всех и обновляться раз в 30 минут """
 def get_access_token(rquid, auth_token):
@@ -27,7 +34,7 @@ def get_access_token(rquid, auth_token):
     return response.status_code
 
 # Получение токена для работы остальных функций
-acces_token = get_access_token(rquid, auth_token)
+access_token = get_access_token(rquid, auth_token)
 
 """ Это функция загрузки изобржения в API. 
 Когда изображение приходит с фронта, сначала нужно добавить его в API, а потом получить id """
@@ -57,7 +64,7 @@ def load_pdf(access_token, img_path):
   payload = {'purpose': 'general'}
 
   files=[
-  ('file',('file',open(str(img_path),'rb'),'image/pdf'))
+  ('file',('file',open(str(img_path),'rb'),'application/pdf'))
   ]
 
   headers = {
@@ -115,14 +122,14 @@ def get_reciept_info(access_token, img_id):
   }
 
   response = requests.request("POST", url, headers=headers, data=payload, verify=False)
-  delete_img(acces_token, img_id)
+  delete_img(access_token, img_id)
 
   if response.status_code == 200:
     return response.json()['choices'][0]['message']['content']
   else:
     return response.status_code
 
-""" Обработка свидетельства о рождении (нормально воспринимает только pdf) """
+""" Обработка свидетельства о рождении """
 def get_birth_info(access_token, img_id):
 
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
@@ -148,7 +155,7 @@ def get_birth_info(access_token, img_id):
   }
 
   response = requests.request("POST", url, headers=headers, data=payload, verify=False)
-  delete_img(acces_token, img_id)
+  delete_img(access_token, img_id)
 
   if response.status_code == 200:
     return response.json()['choices'][0]['message']['content']
@@ -165,7 +172,7 @@ def get_marriage_info(access_token, img_id):
     "messages": [
       {
         "role": "user",
-        "content": "Достань из изображения информацию о названии документа, ФИО мужа и ФИО жены и ответ представь в json-формате с полями: Название документа, Отец: Фамилия, Имя, Отчество; Мать: Фамилия, Имя, Отчество. В ответе укажи только json",
+        "content": "Достань из изображения информацию о названии документа, ФИО мужа и ФИО жены и ответ представь в json-формате с полями: Название документа, ФИО мужа, ФИО жены. В ответе укажи только json",
         "attachments": [
           img_id
         ]
@@ -181,7 +188,7 @@ def get_marriage_info(access_token, img_id):
   }
 
   response = requests.request("POST", url, headers=headers, data=payload, verify=False)
-  delete_img(acces_token, img_id)
+  delete_img(access_token, img_id)
 
   if response.status_code == 200:
     return response.json()['choices'][0]['message']['content']
@@ -214,7 +221,7 @@ def get_reference_info(access_token, img_id):
   }
 
   response = requests.request("POST", url, headers=headers, data=payload, verify=False)
-  delete_img(acces_token, img_id)
+  delete_img(access_token, img_id)
 
   if response.status_code == 200:
     return response.json()['choices'][0]['message']['content']
@@ -247,9 +254,100 @@ def get_contract_info(access_token, img_id):
   }
 
   response = requests.request("POST", url, headers=headers, data=payload, verify=False)
-  delete_img(acces_token, img_id)
+  delete_img(access_token, img_id)
 
   if response.status_code == 200:
     return response.json()['choices'][0]['message']['content']
   else:
     return response.status_code
+
+""" Обработка страхового полиса """
+def get_insurance_info(access_token, img_id):
+
+  url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+
+  payload = json.dumps({
+    "model": "GigaChat-Pro",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Получи информацию о ФИО ребёнка, Дате рождения ребёнка, Номере полиса и сроке действия (формат всех дат dd.mm.yyyy) и ответ представь в json-формате с полями: ФИО, Дата рождения, Номер полиса, Срок действия. В ответе укажи только json",
+        "attachments": [
+          img_id
+        ]
+      }
+    ],
+    "stream": False,
+    "update_interval": 0
+  })
+
+  headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + access_token
+  }
+
+  response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+  delete_img(access_token, img_id)
+
+  if response.status_code == 200:
+    return response.json()['choices'][0]['message']['content']
+  else:
+    return response.status_code
+
+def get_info(access_token, img_id, prompt):
+  
+  url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+
+  payload = json.dumps({
+    "model": "GigaChat-Pro",
+    "messages": [
+      {
+        "role": "user",
+        "content": prompt,
+        "attachments": [
+          img_id
+        ]
+      }
+    ],
+    "stream": False,
+    "update_interval": 0
+  })
+
+  headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + access_token
+  }
+
+  response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+  delete_img(access_token, img_id)
+
+  if response.status_code == 200:
+    return response.json()['choices'][0]['message']['content']
+  else:
+    return response.status_code
+
+def images_to_pdf(image_paths, output_pdf_path):
+
+    pdf = FPDF()
+
+    for image_path in image_paths:
+        with Image.open(image_path) as img:
+            width, height = img.size
+
+        pdf.add_page()
+
+        pdf_width = 210
+        pdf_height = 297
+
+        if width > height:
+            scale_factor = pdf_width / width
+            img_width = pdf_width
+            img_height = height * scale_factor
+        else:
+            scale_factor = pdf_height / height
+            img_width = width * scale_factor
+            img_height = pdf_height
+
+        pdf.image(image_path, x=0, y=0, w=img_width, h=img_height)
+
+    pdf.output(output_pdf_path)
