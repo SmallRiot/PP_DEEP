@@ -376,7 +376,7 @@ def sup_response(user_content, auth_token):
   messages.append(HumanMessage(content=user_content))
   res = model.invoke(messages)
   messages.append(res)
-  return res.content
+  return json.loads(res.content)
 
 def get_statement_info(access_token, img_id):
   
