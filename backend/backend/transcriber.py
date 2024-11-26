@@ -3,15 +3,18 @@ import uuid
 import json
 from fpdf import FPDF
 from PIL import Image
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_gigachat.chat_models import GigaChat
 
 rquid = str(uuid.uuid4()) # Нужен для работы всех функций
 auth_token = '' # Кину отдельно, чтобы его в .env добавить 
 # img_path = input() # Здесь должна быть функция получения изображения с фронта
 
 prompts = {'double_page': 'Получи информацию о ФИО налогоплательщика, дате его рождения, название организации, ИНН или паспортные данные, сумму расходов, ФИО выдавшего справку, ФИО ребёнка, дату рождения ребёнка, а также наличие подписи и даты. Вывод оформи в json-формате',
-           'franchise_reciept': 'Получи информацию о способе оплаты (True, если безнал), ФИО плателщьика, дата оплаты, сумма оплаты, место оплаты, наличие подписи и печати. Ответ оформи в json-формате',
-           'franchise_reference': 'Получи информацию о ФИО плательщика, дате оплаты, сумме оплаты, месте оплаты. Ответ предоставь в json-формате',
-           'isnurence_reference': 'Получи информацию о ФИО плательщика, ФИО ребёнка, годе рождения ребёнка, сроке действия страхования и номере полиса ДМС. Ответ предоставь в json-формате'}
+           'franchise_reciept': 'Получи информацию о способе оплаты (True, если безнал), ФИО плателщьика, дата оплаты, сумма оплаты, место оплаты, наличие подписи и печати. Ответ оформи в json-формате с полями Способ оплаты, ФИО, Дата, Сумма, Место',
+           'franchise_reference': 'Получи информацию о ФИО плательщика, дате оплаты, сумме оплаты, месте оплаты. Ответ предоставь в json-формате с полями ФИО, Дата, Сумма, Место',
+           'isnurence_reference': 'Получи информацию о ФИО плательщика, ФИО ребёнка, годе рождения ребёнка, сроке действия страхования и номере полиса ДМС. Ответ предоставь в json-формате с полями ФИО плательщика, ФИО ребёнка, Год рождения, Срок, Номер',
+           'statement': 'Получи информацию о дате, ФИО заявителя и ФИО ребёнка, а также наличие подписи (true/false). Выведи информацию в json-формате с полями Название документа, Дата, Подпись, ФИО заявителя, ФИО ребёнка'}
 
 """ Токен должен быть один для всех и обновляться раз в 30 минут """
 def get_access_token(rquid, auth_token):
@@ -76,7 +79,7 @@ def load_pdf(access_token, img_path):
   if response.status_code == 200:
     return response.json()['id']
   else:
-    return response.status_code
+    return response
 
 """ Для того, чтобы не хранить персональные данные и не перегружать API, все изоюбражения удаляются после обработки """
 def delete_img(access_token, img_id):
@@ -135,11 +138,12 @@ def get_birth_info(access_token, img_id):
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
 
   payload = json.dumps({
-    "model": "GigaChat-Pro",
+    "model": "GigaChat-Max",
     "messages": [
       {
         "role": "user",
-        "content": "Достань из этого файла ФИО ребёнка, ФИО матери, ФИО отца и дату рождения. Ответ предоставь в json формате с полями ФИО ребёнка, ФИО отца, ФИО матери, Дата рождения",
+        # "content": "Достань из этого файла ФИО ребёнка, ФИО матери, ФИО отца и дату рождения. Ответ предоставь в json формате с полями Название документа, ФИО ребёнка, ФИО отца, ФИО матери, ДР ребёнка",
+        "сontent" : "Получи только эту информацию из файла: Название документа, ФИО ребёнка, ФИО отца, ФИО матери, Дата рождения",
         "attachments": [
           img_id
         ]
@@ -168,11 +172,12 @@ def get_marriage_info(access_token, img_id):
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
 
   payload = json.dumps({
-    "model": "GigaChat-Pro",
+    "model": "GigaChat-Max",
     "messages": [
       {
         "role": "user",
-        "content": "Достань из изображения информацию о названии документа, ФИО мужа и ФИО жены и ответ представь в json-формате с полями: Название документа, ФИО мужа, ФИО жены. В ответе укажи только json",
+        # "content": "Достань из изображения информацию о названии документа, ФИО мужа и ФИО жены и ответ представь в json-формате с полями: Название документа, ФИО мужа, ФИО жены. В ответе укажи только json",
+        "content" : "Расскажи, что находится в этом файле",
         "attachments": [
           img_id
         ]
@@ -195,6 +200,7 @@ def get_marriage_info(access_token, img_id):
   else:
     return response.status_code
 
+# print(get_marriage_info(access_token, load_img(access_token, img_path)))
 """ Обработка справок об операции """
 def get_reference_info(access_token, img_id):
 
@@ -351,3 +357,55 @@ def images_to_pdf(image_paths, output_pdf_path):
         pdf.image(image_path, x=0, y=0, w=img_width, h=img_height)
 
     pdf.output(output_pdf_path)
+
+def sup_response(user_content, auth_token):
+
+  model = GigaChat(
+      credentials=auth_token,
+      scope="GIGACHAT_API_PERS",
+      model="GigaChat",
+      verify_ssl_certs=False,
+  )
+
+  messages = [
+      SystemMessage(
+          content="Ты вадидатор данных, который получает информацию и образует json-файл по полям на выходе. На каждый полученный текст верни json, где все поля находтся на одном уровне. Даты приводи в формат dd/mm/yyyy. Если в документе встречается ФИО, записывай каждое ФИО в отдельное поле с соотвествующим наименованием"
+    )
+  ] 
+
+  messages.append(HumanMessage(content=user_content))
+  res = model.invoke(messages)
+  messages.append(res)
+  return res.content
+
+def get_statement_info(access_token, img_id):
+  
+  url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+
+  payload = json.dumps({
+    "model": "GigaChat-Pro",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Получи информацию о дате, ФИО заявителя и ФИО ребёнка, а также наличие подписи (true/false). Выведи информацию в json-формате с полями Название документа, Дата, Подпись, ФИО заявителя, ФИО ребёнка",
+        "attachments": [
+          img_id
+        ]
+      }
+    ],
+    "stream": False,
+    "update_interval": 0
+  })
+
+  headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + access_token
+  }
+
+  response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+  delete_img(access_token, img_id)
+
+  if response.status_code == 200:
+    return response.json()['choices'][0]['message']['content']
+  else:
+    return response.status_code
