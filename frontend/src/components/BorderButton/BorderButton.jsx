@@ -3,7 +3,7 @@ import classes from "./BorderButton.module.css";
 
 const BorderButton = ({ style, path, onClick }) => {
   return (
-    <Link to={`/bank/${path}`} className={classes.btn} style={style}>
+    <Link to={path} className={classes.btn} style={style}>
       <div className={classes.content} onClick={onClick}>
         <p>Далее</p>
         <p>→</p>

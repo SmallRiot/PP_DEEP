@@ -2,34 +2,58 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// Асинхронное действие для загрузки файла на сервер
 export const uploadFile = createAsyncThunk(
   "file/uploadFile",
   async (file, { rejectWithValue }) => {
     const formData = new FormData();
-    formData.append("file", file);
-    formData.forEach((value, key) => {
-      console.log(`${key}: ${value}`);
-    });
-
+    formData.append("path", file);
+    console.log("FileName: " + file.name);
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/documents/",
         formData,
         {
-          headers: { "Content-Type": "multipart/form-data" },
-          // withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         }
       );
 
-      if (!response.ok) {
-        console.log(response);
-        throw new Error(response.json().toString());
-      }
-
-      return response.data; // Возвращаем данные сервера (например, URL файла)
+      return response.data;
     } catch (error) {
-      return rejectWithValue(error.message); // Обрабатываем ошибки
+      return error.response
+        ? rejectWithValue(error.response.data)
+        : rejectWithValue("Отсутствует соединение с сервером");
+    }
+  }
+);
+
+export const downloadFile = createAsyncThunk(
+  "file/downloadFile",
+  async (id, { rejectWithValue }) => {
+    try {
+      console.log("request");
+      const response = await axios.get(
+        "http://127.0.0.1:8000/api/api/combine_pdf",
+        {
+          responseType: "blob",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+      console.log(response.data.path);
+      return response.data;
+    } catch (error) {
+      const headers = {};
+      error.response.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+      console.log("Error: " + error.message);
+      return error.response
+        ? rejectWithValue({ errorMessage: error.message })
+        : rejectWithValue("Отсутствует соединение с сервером");
     }
   }
 );
@@ -38,10 +62,13 @@ const fileSlice = createSlice({
   name: "file",
   initialState: {
     uploadStatus: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
-    error: null,
+    downloadStatus: "idle",
+    uploadError: null,
+    downloadError: null,
+    downloadData: null,
   },
   reducers: {
-    initFile: (state, action) => {
+    initUploadFile: (state, action) => {
       state.uploadStatus = "idle";
     },
   },
@@ -49,17 +76,29 @@ const fileSlice = createSlice({
     builder
       .addCase(uploadFile.pending, (state) => {
         state.uploadStatus = "loading";
-        state.error = null;
+        state.uploadError = null;
       })
       .addCase(uploadFile.fulfilled, (state) => {
         state.uploadStatus = "succeeded";
       })
       .addCase(uploadFile.rejected, (state, action) => {
         state.uploadStatus = "failed";
-        state.error = action.payload; // Сохраняем сообщение об ошибке
+        state.uploadError = action.payload;
+      })
+      .addCase(downloadFile.pending, (state) => {
+        state.downloadStatus = "loading";
+        state.uploadError = null;
+      })
+      .addCase(downloadFile.fulfilled, (state, action) => {
+        state.downloadStatus = "succeeded";
+        state.downloadData = action.payload;
+      })
+      .addCase(downloadFile.rejected, (state, action) => {
+        state.downloadStatus = "failed";
+        state.downloadError = action.payload;
       });
   },
 });
 
 export default fileSlice.reducer;
-export const { initFile } = fileSlice.actions;
+export const { initUploadFile } = fileSlice.actions;

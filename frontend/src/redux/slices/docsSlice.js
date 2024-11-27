@@ -13,7 +13,10 @@ const docsSlice = createSlice({
 });
 
 export const getPathIndexByName = (state, pathName) =>
-  state.routes.findIndex((el) => el.initPath === pathName);
+  state.routes.findIndex((el) => {
+    let arr = el.initPath.split("/");
+    return arr[arr.length - 1] === pathName;
+  });
 
 export const { setRouts } = docsSlice.actions;
 export default docsSlice.reducer;

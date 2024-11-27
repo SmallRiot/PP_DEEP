@@ -6,6 +6,7 @@ import { Route, Routes } from "react-router-dom";
 import Card from "./components/Card/Card";
 import PaymentCard from "./components/PaymentCard/PaymentCard";
 import { useSelector } from "react-redux";
+import DownloadPage from "./components/DownloadPage/DownloadPage";
 
 function App() {
   const arr = useSelector((state) => state.docs.routes);
@@ -26,6 +27,7 @@ function App() {
             }
           })}
         </Route>
+        <Route path="/document" element={<DownloadPage />} />
       </Routes>
     </div>
   );

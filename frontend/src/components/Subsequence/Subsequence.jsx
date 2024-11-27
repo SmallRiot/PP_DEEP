@@ -10,6 +10,7 @@ const Subsequence = () => {
   const currentPath = location.pathname.slice(1);
   const arr = currentPath.split("/");
   const chapter = arr[arr.length - 1];
+  console.log(chapter);
   const count = useSelector((state) => state.docs.routes.length);
   const index = useSelector((state) => getPathIndexByName(state.docs, chapter));
   let current = 0;
