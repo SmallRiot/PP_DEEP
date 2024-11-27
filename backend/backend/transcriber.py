@@ -7,8 +7,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_gigachat.chat_models import GigaChat
 
 rquid = str(uuid.uuid4()) # Нужен для работы всех функций
-auth_token = 'YWUxNTAwNmItZWZmYi00NmNiLTk5ZjgtOTE4YWRiYWM0ZDZkOjYyOGVhNTliLWY0MmQtNGEzNS1hNDUwLWY4YzBlMjQ5NTliNg==' # Кину отдельно, чтобы его в .env добавить 
-img_path = input() # Здесь должна быть функция получения изображения с фронта
+auth_token = '' # Кину отдельно, чтобы его в .env добавить 
+# img_path = input() # Здесь должна быть функция получения изображения с фронта
 
 prompts = {'double_page': 'Получи информацию о ФИО налогоплательщика, дате его рождения, название организации, ИНН или паспортные данные, сумму расходов, ФИО выдавшего справку, ФИО ребёнка, дату рождения ребёнка, а также наличие подписи и даты. Вывод оформи в json-формате'}
 
@@ -296,16 +296,16 @@ def get_insurance_info(access_token, img_id):
   else:
     return response.status_code
 
-def get_info(access_token, img_id, prompt):
+def get_info(access_token, img_id):
   
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
 
   payload = json.dumps({
-    "model": "GigaChat-Pro",
+    "model": "GigaChat-Max",
     "messages": [
       {
         "role": "user",
-        "content": prompt,
+        "content": "Получи информацию из этого файла и выведи её в виде списка",
         "attachments": [
           img_id
         ]
@@ -577,92 +577,25 @@ def process_marriage_certificate(access_token, img_id):
     else:
         return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
 
-def process_statement(access_token, img_id):
-    """
-    Функция для обработки заявления:
-    1. Извлекает текст с изображения.
-    2. Преобразует текст в JSON на основе заданного промпта.
-    """
-    base_url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + access_token
-    }
+def statement_response(user_content, auth_token):
 
+  model = GigaChat(
+      credentials=auth_token,
+      scope="GIGACHAT_API_PERS",
+      model="GigaChat",
+      verify_ssl_certs=False,
+  )
 
-    prompt = """
-    Прочитай предоставленный текст из свидетельства о рождении и преобразуй его в формат JSON с полями:
-    - "Название документа" — фиксированное значение: "ЗАЯВЛЕНИЕ НА МЕД. ОБСЛУЖИВАНИЕ".
-    - "ФИО ребенка" — Фамилия, Имя, Отчество ребенка.
-    - "ДР ребенка" — дата рождения ребенка в формате DD/MM/YYYY.
-    - "Дата подписания" — дата оформления заявления в формате DD/MM/YYYY.
-    - "Подпись" — Наличие подписи в формате true/false.
-        НЕМНОГО ИСПОЛЬЗУЙ ЛОГИКУ, В СЛУЧАЕ ЕСЛИ ФАМИЛИИ ОТЛИЧАЮТСЯ НА ОДНУ БУКВУ ВАЛИДИРУЙ КАК ТЫ БУДЕШЬ ЧТО БЫЛО И ТД
-    Убедись, что данные корректны. Игнорируй информацию о месте рождения, национальности, гражданстве и других дополнительных данных. Пример результата:
-    {
-      "Название документа": "ЗАЯВЛЕНИЕ НА МЕД. ОБСЛУЖИВАНИЕ",
-      "ФИО ребенка": "Иванов Иван Иванович",
-      "ДР ребенка": "15/05/2010",
-      "Дата подписания": "26/11/2024",
-      "Подпись": True
-    }
+  messages = [
+      SystemMessage(
+          content="Ты вадидатор данных, который получает информацию и образует json-файл по полям на выходе. Даты переводи в формат dd/mm/yyyy Выведи только следующие поля: ФИО ребенка, ДР ребенка, Дата подписи, Наличие подписи"
+    )
+  ] 
 
-    В ответ дай только JSON который я запрашиваю
-    """
-    
-    # Шаг 1: Извлечение текста с изображения
-    extract_text_payload = json.dumps({
-        "model": "GigaChat-Max",
-        "messages": [
-            {
-                "role": "user",
-                "content": """Выведи информацию со снимка текстом всю, сделай это качественно /
-                Заявление на мед. обсулживание на стандартном бланке. Верхняя часть документа содержит заголовок. Там же оформлено обращение по полям с ФИО руководителя, ФИО заместителя и ФИО заявителя, текст самого заявления, в конце находится поле для даты подписания и место для подписи.""",
-                "attachments": [img_id]
-            }
-        ],
-        "stream": False,
-        "update_interval": 0
-    })
-
-    extract_response = requests.post(base_url, headers=headers, data=extract_text_payload, verify=False)
-    if extract_response.status_code != 200:
-        delete_img(access_token, img_id)
-        return {"error": f"Ошибка извлечения текста: {extract_response.status_code}", "details": extract_response.text}
-
-    extracted_text = extract_response.json()['choices'][0]['message']['content']
-    # print("Извлечённый текст:")
-    # print(extracted_text)
-
-    # Шаг 2: Преобразование текста в JSON
-    process_payload = json.dumps({
-        "model": "GigaChat-Max",
-        "messages": [
-            {
-                "role": "user",
-                "content": f"{prompt}\n\nТекст документа:\n{extracted_text}"
-            }
-        ],
-        "stream": False,
-        "update_interval": 0
-    })
-
-    process_response = requests.post(base_url, headers=headers, data=process_payload, verify=False)
-    delete_img(access_token, img_id)  # Удаляем изображение после обработки
-    if process_response.status_code == 200:
-        try:
-            raw_content = process_response.json()['choices'][0]['message']['content']
-            json_start = raw_content.find("{")
-            json_end = raw_content.rfind("}") + 1
-            if json_start != -1 and json_end != -1:
-                cleaned_json = raw_content[json_start:json_end]
-                return json.loads(cleaned_json)
-            else:
-                return {"error": "JSON не найден в ответе", "response": raw_content}
-        except Exception as e:
-            return {"error": f"Ошибка обработки JSON: {str(e)}", "response": process_response.json()}
-    else:
-        return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
+  messages.append(HumanMessage(content=user_content))
+  res = model.invoke(messages)
+  messages.append(res)
+  return json.loads(res.content)
 
 def process_reciept(access_token, img_id):
     """
