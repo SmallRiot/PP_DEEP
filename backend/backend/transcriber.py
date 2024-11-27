@@ -301,7 +301,7 @@ def get_info(access_token, img_id):
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
 
   payload = json.dumps({
-    "model": "GigaChat-Max",
+    "model": "GigaChat-Pro",
     "messages": [
       {
         "role": "user",
