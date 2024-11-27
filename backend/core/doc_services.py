@@ -50,6 +50,10 @@ class DataInspector:
             data = json.loads(self.json_data)
 
             # Извлечение данных из JSON
+            file_name = data.get('Название документа')
+            if(file_name != "СВИДЕТЕЛЬСТВО О ЗАКЛЮЧЕНИИ БРАКА"):
+                return JsonResponse({'message': "Загружен неверный файл"}, status=400)
+
             father_name = data.get('ФИО мужа')
             mother_name = data.get('ФИО жены')
 
@@ -75,6 +79,10 @@ class DataInspector:
             data = json.loads(self.json_data)
 
             # Извлечение данных из JSON
+            file_name = data.get('Название документа')
+            if(file_name != "Заявление"):
+                return JsonResponse({'message': "Загружен неверный файл"}, status=400)
+
             signature = data.get('Подпись')
             date = parse_date(data.get('Дата'),'Дата')
             if isinstance(date, JsonResponse): return date
@@ -119,6 +127,10 @@ class DataInspector:
             data = json.loads(self.json_data)
 
             # Извлечение данных из JSON
+            file_name = data.get('Название документа')
+            if(file_name != "СВИДЕТЕЛЬСТВО О РОЖДЕНИИ"):
+                return JsonResponse({'message': "Загружен неверный файл"}, status=400)
+
             father_name = data.get('ФИО отца')
             mother_name = data.get('ФИО матери')
             child_name = data.get('ФИО ребенка')

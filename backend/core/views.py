@@ -59,7 +59,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
           "Подпись": false,
           "ФИО заявителя": "Петров Сергей Александрович",
           "ФИО ребенка": "Петрова Анна Сергеевна",
-          "Дата рождения ребенка": "201"
+          "Дата рождения ребенка": "2024-08-20"
         }
         '''
 
@@ -85,7 +85,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         # Второе св. о браке
         marriage_certificate2 = '''
         {
-          "Название документа": "СВИДЕТЕЛЬСТВО О ЗАКЛЮЧЕНИИ БРАКА",
+          "Название документа": "СВИДЕТЕЛЬСТВО О ЗАКЛЮЧЕНИИ БРАКАa",
           "ФИО мужа": "Белов Сергей Юрьевич",
           "ФИО жены": "Белова Александра Андреевна"
         }
@@ -94,7 +94,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         # второе св. о рождении
         birth_certificate2 = '''
         {
-          "Название документа": "СВИДЕТЕЛЬСТВО О РОЖДЕНИИ",
+          "Название документа": "СВИДЕТЕЛЬСТВО О РОЖДЕНИИa",
           "ФИО ребенка": "Белова Марина Сергеевна",
           "ДР ребенка": "30/07/2015",
           "ФИО отца": "Белов Сергей Юрьевич",
@@ -120,7 +120,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
 
         if("marriage_certificate" in saved_instance.name):
-            inspector = DataInspector(marriage_certificate2)
+            inspector = DataInspector(marriage_certificate1)
             response= inspector.check_marriage_certificate(session_id)
             if (response.status_code == 400):
                 delete_garbage_file(saved_instance.id)
