@@ -57,7 +57,11 @@ class DataInspector:
             father_name = data.get('ФИО мужа')
             mother_name = data.get('ФИО жены')
 
-            medical_insurance = MedicalInsurance.objects.get(session_id=_session_id)
+            try:
+                medical_insurance = MedicalInsurance.objects.get(session_id=_session_id)
+            except Exception:
+                return JsonResponse(
+                    {'message': "Документ 'Свидетельство о рождении' не найден. Пожалуйста, следуйте инструкции"}, status=400)
 
             father = medical_insurance.father
             mother =medical_insurance.mother
@@ -93,7 +97,11 @@ class DataInspector:
             kid_birth = parse_date(data.get('Дата рождения ребенка'),'Дата рождения ребенка')
             if isinstance(kid_birth, JsonResponse): return kid_birth
 
-            medical_insurance = MedicalInsurance.objects.get(session_id=_session_id)
+            try:
+                medical_insurance = MedicalInsurance.objects.get(session_id=_session_id)
+            except Exception:
+                return JsonResponse(
+                    {'message': "Документ 'Свидетельство о рождении' не найден. Пожалуйста, следуйте инструкции"},status=400)
 
             if(not signature):
                 return JsonResponse({'message': 'Подпись не распознана'}, status=400)
