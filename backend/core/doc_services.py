@@ -51,7 +51,7 @@ class DataInspector:
 
             # Извлечение данных из JSON
             file_name = data.get('Название документа')
-            if(file_name != "СВИДЕТЕЛЬСТВО О ЗАКЛЮЧЕНИИ БРАКА"):
+            if(file_name != "СВИДЕТЕЛЬСТВО О ЗАКЛЮЧЕНИИ БРАКА" and file_name != "СВИДЕТЕЛЬСТВО О БРАКЕ"):
                 return JsonResponse({'message': "Загружен неверный файл"}, status=400)
 
             father_name = data.get('ФИО мужа')
@@ -133,7 +133,6 @@ class DataInspector:
     def check_birth_certificate(self, _session_id):
         try:
             data = json.loads(self.json_data)
-
             # Извлечение данных из JSON
             file_name = data.get('Название документа')
             if(file_name != "СВИДЕТЕЛЬСТВО О РОЖДЕНИИ"):
