@@ -7,14 +7,10 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_gigachat.chat_models import GigaChat
 
 rquid = str(uuid.uuid4()) # Нужен для работы всех функций
-auth_token = '' # Кину отдельно, чтобы его в .env добавить 
-# img_path = input() # Здесь должна быть функция получения изображения с фронта
+auth_token = 'YWUxNTAwNmItZWZmYi00NmNiLTk5ZjgtOTE4YWRiYWM0ZDZkOjYyOGVhNTliLWY0MmQtNGEzNS1hNDUwLWY4YzBlMjQ5NTliNg==' # Кину отдельно, чтобы его в .env добавить 
+img_path = input() # Здесь должна быть функция получения изображения с фронта
 
-prompts = {'double_page': 'Получи информацию о ФИО налогоплательщика, дате его рождения, название организации, ИНН или паспортные данные, сумму расходов, ФИО выдавшего справку, ФИО ребёнка, дату рождения ребёнка, а также наличие подписи и даты. Вывод оформи в json-формате',
-           'franchise_reciept': 'Получи информацию о способе оплаты (True, если безнал), ФИО плателщьика, дата оплаты, сумма оплаты, место оплаты, наличие подписи и печати. Ответ оформи в json-формате с полями Способ оплаты, ФИО, Дата, Сумма, Место',
-           'franchise_reference': 'Получи информацию о ФИО плательщика, дате оплаты, сумме оплаты, месте оплаты. Ответ предоставь в json-формате с полями ФИО, Дата, Сумма, Место',
-           'isnurence_reference': 'Получи информацию о ФИО плательщика, ФИО ребёнка, годе рождения ребёнка, сроке действия страхования и номере полиса ДМС. Ответ предоставь в json-формате с полями ФИО плательщика, ФИО ребёнка, Год рождения, Срок, Номер',
-           'statement': 'Получи информацию о дате, ФИО заявителя и ФИО ребёнка, а также наличие подписи (true/false). Выведи информацию в json-формате с полями Название документа, Дата, Подпись, ФИО заявителя, ФИО ребёнка'}
+prompts = {'double_page': 'Получи информацию о ФИО налогоплательщика, дате его рождения, название организации, ИНН или паспортные данные, сумму расходов, ФИО выдавшего справку, ФИО ребёнка, дату рождения ребёнка, а также наличие подписи и даты. Вывод оформи в json-формате'}
 
 """ Токен должен быть один для всех и обновляться раз в 30 минут """
 def get_access_token(rquid, auth_token):
@@ -99,7 +95,7 @@ def delete_img(access_token, img_id):
   else:
     return response.status_code
 
-""" Обработка чеков """
+""" Обработка чеков (переписано)"""
 def get_reciept_info(access_token, img_id):
 
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
@@ -132,7 +128,7 @@ def get_reciept_info(access_token, img_id):
   else:
     return response.status_code
 
-""" Обработка свидетельства о рождении """
+""" Обработка свидетельства о рождении (переписано)"""
 def get_birth_info(access_token, img_id):
 
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
@@ -143,7 +139,7 @@ def get_birth_info(access_token, img_id):
       {
         "role": "user",
         # "content": "Достань из этого файла ФИО ребёнка, ФИО матери, ФИО отца и дату рождения. Ответ предоставь в json формате с полями Название документа, ФИО ребёнка, ФИО отца, ФИО матери, ДР ребёнка",
-        "сontent" : "Получи только эту информацию из файла: Название документа, ФИО ребёнка, ФИО отца, ФИО матери, Дата рождения",
+        "content" : "Получи только эту информацию из файла: Название документа, ФИО ребёнка, ФИО отца, ФИО матери, Дата рождения",
         "attachments": [
           img_id
         ]
@@ -166,7 +162,7 @@ def get_birth_info(access_token, img_id):
   else:
     return response.status_code
 
-""" Обработка свидетельства о браке """
+""" Обработка свидетельства о браке (переписано)"""
 def get_marriage_info(access_token, img_id):
 
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
@@ -201,7 +197,7 @@ def get_marriage_info(access_token, img_id):
     return response.status_code
 
 # print(get_marriage_info(access_token, load_img(access_token, img_path)))
-""" Обработка справок об операции """
+""" Обработка справок об операции (переписано)"""
 def get_reference_info(access_token, img_id):
 
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
@@ -267,7 +263,7 @@ def get_contract_info(access_token, img_id):
   else:
     return response.status_code
 
-""" Обработка страхового полиса """
+""" Обработка страхового полиса (переписано)"""
 def get_insurance_info(access_token, img_id):
 
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
@@ -378,6 +374,7 @@ def sup_response(user_content, auth_token):
   messages.append(res)
   return json.loads(res.content)
 
+""" Обработка заявления (переписано)"""
 def get_statement_info(access_token, img_id):
   
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
@@ -409,3 +406,608 @@ def get_statement_info(access_token, img_id):
     return response.json()['choices'][0]['message']['content']
   else:
     return response.status_code
+
+def process_birth_certificate(access_token, img_id):
+    """
+    Функция для обработки свидетельства о рождении:
+    1. Извлекает текст с изображения.
+    2. Преобразует текст в JSON на основе заданного промпта.
+    """
+    base_url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + access_token
+    }
+
+
+    prompt = """
+    Прочитай предоставленный текст из свидетельства о рождении и преобразуй его в формат JSON с полями:
+    - "Название документа" — фиксированное значение: "СВИДЕТЕЛЬСТВО О РОЖДЕНИИ".
+    - "ФИО ребенка" — Фамилия, Имя, Отчество ребенка.
+    - "ДР ребенка" — дата рождения ребенка в формате DD/MM/YYYY.
+    - "ФИО отца" — Фамилия, Имя, Отчество отца.
+    - "ФИО матери" — Фамилия, Имя, Отчество матери.
+        НЕМНОГО ИСПОЛЬЗУЙ ЛОГИКУ, В СЛУЧАЕ ЕСЛИ ФАМИЛИИ ОТЛИЧАЮТСЯ НА ОДНУ БУКВУ ВАЛИДИРУЙ КАК ТЫ БУДЕШЬ ЧТО БЫЛО И ТД
+    Убедись, что данные корректны. Игнорируй информацию о месте рождения, национальности, гражданстве и других дополнительных данных. Пример результата:
+    {
+      "Название документа": "СВИДЕТЕЛЬСТВО О РОЖДЕНИИ",
+      "ФИО ребенка": "Иванов Иван Иванович",
+      "ДР ребенка": "15/05/2010",
+      "ФИО отца": "Иванов Петр Сергеевич",
+      "ФИО матери": "Иванова Мария Васильевна"
+    }
+
+    В ответ дай только JSON который я запрашиваю
+    """
+    
+    # Шаг 1: Извлечение текста с изображения
+    extract_text_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": """Выведи информацию со снимка текстом всю, сделай это качественно /
+                Свидетельство о рождении на стандартном бланке. Верхняя часть документа содержит заголовок. Указаны следующие поля: ФИО ребенка, дата рождения (прописью и цифрами), место рождения, гражданство, сведения об отце (ФИО, гражданство, национальность), сведения о матери (ФИО, гражданство, национальность), орган ЗАГС, дата составления записи, дата выдачи документа, подпись и печать. В документе используются зелёные декоративные элементы, печать синяя.""",
+                "attachments": [img_id]
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    extract_response = requests.post(base_url, headers=headers, data=extract_text_payload, verify=False)
+    if extract_response.status_code != 200:
+        delete_img(access_token, img_id)
+        return {"error": f"Ошибка извлечения текста: {extract_response.status_code}", "details": extract_response.text}
+
+    extracted_text = extract_response.json()['choices'][0]['message']['content']
+    # print("Извлечённый текст:")
+    # print(extracted_text)
+
+    # Шаг 2: Преобразование текста в JSON
+    process_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": f"{prompt}\n\nТекст документа:\n{extracted_text}"
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    process_response = requests.post(base_url, headers=headers, data=process_payload, verify=False)
+    delete_img(access_token, img_id)  # Удаляем изображение после обработки
+    if process_response.status_code == 200:
+        try:
+            raw_content = process_response.json()['choices'][0]['message']['content']
+            json_start = raw_content.find("{")
+            json_end = raw_content.rfind("}") + 1
+            if json_start != -1 and json_end != -1:
+                cleaned_json = raw_content[json_start:json_end]
+                return json.loads(cleaned_json)
+            else:
+                return {"error": "JSON не найден в ответе", "response": raw_content}
+        except Exception as e:
+            return {"error": f"Ошибка обработки JSON: {str(e)}", "response": process_response.json()}
+    else:
+        return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
+
+def process_marriage_certificate(access_token, img_id):
+    """
+    Функция для обработки свидетельства о браке:
+    1. Извлекает текст с изображения.
+    2. Преобразует текст в JSON на основе заданного промпта.
+    """
+    base_url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + access_token
+    }
+
+
+    prompt = """
+    Прочитай предоставленный текст из свидетельства о браке и преобразуй его в формат JSON с полями:
+    - "Название документа" — фиксированное значение: "СВИДЕТЕЛЬСТВО О БРАКЕ".
+    - "ФИО мужа" — Фамилия, Имя, Отчество мужа.
+    - "ФИО жены" — Фамилия, Имя, Отчество жены.
+        НЕМНОГО ИСПОЛЬЗУЙ ЛОГИКУ, В СЛУЧАЕ ЕСЛИ ФАМИЛИИ ОТЛИЧАЮТСЯ НА ОДНУ БУКВУ ВАЛИДИРУЙ КАК ТЫ БУДЕШЬ ЧТО БЫЛО И ТД
+    Убедись, что данные корректны. Игнорируй информацию о месте рождения, национальности, гражданстве и других дополнительных данных. Пример результата:
+    {
+      "Название документа": "СВИДЕТЕЛЬСТВО О БРАКЕ",
+      "ФИО мужа": "Иванов Петр Сергеевич",
+      "ФИО жены": "Иванова Мария Васильевна"
+    }
+
+    В ответ дай только JSON который я запрашиваю
+    """
+    
+    # Шаг 1: Извлечение текста с изображения
+    extract_text_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": """Выведи информацию со снимка текстом всю, сделай это качественно /
+                Свидетельство о браке на стандартном бланке. Верхняя часть документа содержит заголовок. Указаны следующие поля: информация про мужа (ФИО и Дата рождения),  информация про жену (ФИО и Дата рождения), дата заключения брака и дата оформления брака (прописью и цифрами), присвоенные фамилии, место регистрации, дата выдачи, подпись и печать. В документе используются красные декоративные элементы, печать синяя.""",
+                "attachments": [img_id]
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    extract_response = requests.post(base_url, headers=headers, data=extract_text_payload, verify=False)
+    if extract_response.status_code != 200:
+        delete_img(access_token, img_id)
+        return {"error": f"Ошибка извлечения текста: {extract_response.status_code}", "details": extract_response.text}
+
+    extracted_text = extract_response.json()['choices'][0]['message']['content']
+    # print("Извлечённый текст:")
+    # print(extracted_text)
+
+    # Шаг 2: Преобразование текста в JSON
+    process_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": f"{prompt}\n\nТекст документа:\n{extracted_text}"
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    process_response = requests.post(base_url, headers=headers, data=process_payload, verify=False)
+    delete_img(access_token, img_id)  # Удаляем изображение после обработки
+    if process_response.status_code == 200:
+        try:
+            raw_content = process_response.json()['choices'][0]['message']['content']
+            json_start = raw_content.find("{")
+            json_end = raw_content.rfind("}") + 1
+            if json_start != -1 and json_end != -1:
+                cleaned_json = raw_content[json_start:json_end]
+                return json.loads(cleaned_json)
+            else:
+                return {"error": "JSON не найден в ответе", "response": raw_content}
+        except Exception as e:
+            return {"error": f"Ошибка обработки JSON: {str(e)}", "response": process_response.json()}
+    else:
+        return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
+
+def process_statement(access_token, img_id):
+    """
+    Функция для обработки заявления:
+    1. Извлекает текст с изображения.
+    2. Преобразует текст в JSON на основе заданного промпта.
+    """
+    base_url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + access_token
+    }
+
+
+    prompt = """
+    Прочитай предоставленный текст из свидетельства о рождении и преобразуй его в формат JSON с полями:
+    - "Название документа" — фиксированное значение: "ЗАЯВЛЕНИЕ НА МЕД. ОБСЛУЖИВАНИЕ".
+    - "ФИО ребенка" — Фамилия, Имя, Отчество ребенка.
+    - "ДР ребенка" — дата рождения ребенка в формате DD/MM/YYYY.
+    - "Дата подписания" — дата оформления заявления в формате DD/MM/YYYY.
+    - "Подпись" — Наличие подписи в формате true/false.
+        НЕМНОГО ИСПОЛЬЗУЙ ЛОГИКУ, В СЛУЧАЕ ЕСЛИ ФАМИЛИИ ОТЛИЧАЮТСЯ НА ОДНУ БУКВУ ВАЛИДИРУЙ КАК ТЫ БУДЕШЬ ЧТО БЫЛО И ТД
+    Убедись, что данные корректны. Игнорируй информацию о месте рождения, национальности, гражданстве и других дополнительных данных. Пример результата:
+    {
+      "Название документа": "ЗАЯВЛЕНИЕ НА МЕД. ОБСЛУЖИВАНИЕ",
+      "ФИО ребенка": "Иванов Иван Иванович",
+      "ДР ребенка": "15/05/2010",
+      "Дата подписания": "26/11/2024",
+      "Подпись": True
+    }
+
+    В ответ дай только JSON который я запрашиваю
+    """
+    
+    # Шаг 1: Извлечение текста с изображения
+    extract_text_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": """Выведи информацию со снимка текстом всю, сделай это качественно /
+                Заявление на мед. обсулживание на стандартном бланке. Верхняя часть документа содержит заголовок. Там же оформлено обращение по полям с ФИО руководителя, ФИО заместителя и ФИО заявителя, текст самого заявления, в конце находится поле для даты подписания и место для подписи.""",
+                "attachments": [img_id]
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    extract_response = requests.post(base_url, headers=headers, data=extract_text_payload, verify=False)
+    if extract_response.status_code != 200:
+        delete_img(access_token, img_id)
+        return {"error": f"Ошибка извлечения текста: {extract_response.status_code}", "details": extract_response.text}
+
+    extracted_text = extract_response.json()['choices'][0]['message']['content']
+    # print("Извлечённый текст:")
+    # print(extracted_text)
+
+    # Шаг 2: Преобразование текста в JSON
+    process_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": f"{prompt}\n\nТекст документа:\n{extracted_text}"
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    process_response = requests.post(base_url, headers=headers, data=process_payload, verify=False)
+    delete_img(access_token, img_id)  # Удаляем изображение после обработки
+    if process_response.status_code == 200:
+        try:
+            raw_content = process_response.json()['choices'][0]['message']['content']
+            json_start = raw_content.find("{")
+            json_end = raw_content.rfind("}") + 1
+            if json_start != -1 and json_end != -1:
+                cleaned_json = raw_content[json_start:json_end]
+                return json.loads(cleaned_json)
+            else:
+                return {"error": "JSON не найден в ответе", "response": raw_content}
+        except Exception as e:
+            return {"error": f"Ошибка обработки JSON: {str(e)}", "response": process_response.json()}
+    else:
+        return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
+
+def process_reciept(access_token, img_id):
+    """
+    Функция для обработки чеков:
+    1. Извлекает текст с изображения.
+    2. Преобразует текст в JSON на основе заданного промпта.
+    """
+    base_url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + access_token
+    }
+
+
+    prompt = """
+    Прочитай предоставленный текст из чека и преобразуй его в формат JSON с полями:
+    - "Способ оплаты" — Способ оплаты наличиными или безналично".
+    - "ФИО плательщика" — Фамилия, Имя, Отчество плательщика.
+    - "Дата оплаты" — дата оплаты в формате DD/MM/YYYY.
+    - "Сумма" — Итоговая сумма по операции.
+    - "Место оплаты" — Название организации, где была проведена оплата.
+    - "Подпись" — Наличие подписи в формате true/false.
+    - "Печать" — Наличие печати в формате true/false.
+        НЕМНОГО ИСПОЛЬЗУЙ ЛОГИКУ, В СЛУЧАЕ ЕСЛИ ФАМИЛИИ ОТЛИЧАЮТСЯ НА ОДНУ БУКВУ ВАЛИДИРУЙ КАК ТЫ БУДЕШЬ ЧТО БЫЛО И ТД
+    Убедись, что данные корректны. Игнорируй информацию о месте рождения, национальности, гражданстве и других дополнительных данных. Пример результата:
+    {
+      "Способ оплаты": "Безналично",
+      "ФИО плательщика": "Иванов Иван Иванович",
+      "Дата оплаты": "15/05/2024",
+      "Сумма": "16000.00",
+      "Место оплаты": "Больница",
+      "Подпись": True,
+      "Печать": True
+    }
+
+    В ответ дай только JSON который я запрашиваю
+    """
+    
+    # Шаг 1: Извлечение текста с изображения
+    extract_text_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": """Выведи информацию со снимка текстом всю, сделай это качественно /
+                Стандартный чек, сверху находится шапка с названием места оплаты, далее идут пункты по которым была произведена оплата, количество и цена. В конце указана итоговая стоимость, способ оплаты, дата оплаты, подпись и печать. Печать синяя.""",
+                "attachments": [img_id]
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    extract_response = requests.post(base_url, headers=headers, data=extract_text_payload, verify=False)
+    if extract_response.status_code != 200:
+        delete_img(access_token, img_id)
+        return {"error": f"Ошибка извлечения текста: {extract_response.status_code}", "details": extract_response.text}
+
+    extracted_text = extract_response.json()['choices'][0]['message']['content']
+    # print("Извлечённый текст:")
+    # print(extracted_text)
+
+    # Шаг 2: Преобразование текста в JSON
+    process_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": f"{prompt}\n\nТекст документа:\n{extracted_text}"
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    process_response = requests.post(base_url, headers=headers, data=process_payload, verify=False)
+    delete_img(access_token, img_id)  # Удаляем изображение после обработки
+    if process_response.status_code == 200:
+        try:
+            raw_content = process_response.json()['choices'][0]['message']['content']
+            json_start = raw_content.find("{")
+            json_end = raw_content.rfind("}") + 1
+            if json_start != -1 and json_end != -1:
+                cleaned_json = raw_content[json_start:json_end]
+                return json.loads(cleaned_json)
+            else:
+                return {"error": "JSON не найден в ответе", "response": raw_content}
+        except Exception as e:
+            return {"error": f"Ошибка обработки JSON: {str(e)}", "response": process_response.json()}
+    else:
+        return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
+
+def process_reference(access_token, img_id):
+    """
+    Функция для обработки справок по чекам:
+    1. Извлекает текст с изображения.
+    2. Преобразует текст в JSON на основе заданного промпта.
+    """
+    base_url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + access_token
+    }
+
+
+    prompt = """
+    Прочитай предоставленный текст из чека и преобразуй его в формат JSON с полями:
+    - "ФИО плательщика" — Фамилия, Имя, Отчество плательщика.
+    - "Дата оплаты" — дата оплаты в формате DD/MM/YYYY.
+    - "Сумма" — Итоговая сумма по операции.
+    - "Место оплаты" — Название организации, где была проведена оплата.
+        НЕМНОГО ИСПОЛЬЗУЙ ЛОГИКУ, В СЛУЧАЕ ЕСЛИ ФАМИЛИИ ОТЛИЧАЮТСЯ НА ОДНУ БУКВУ ВАЛИДИРУЙ КАК ТЫ БУДЕШЬ ЧТО БЫЛО И ТД
+    Убедись, что данные корректны. Игнорируй информацию о месте рождения, национальности, гражданстве и других дополнительных данных. Пример результата:
+    {
+      "ФИО плательщика": "Иванов Иван Иванович",
+      "Дата оплаты": "15/05/2024",
+      "Сумма": "16000.00",
+      "Место оплаты": "Больница",
+    }
+
+    В ответ дай только JSON который я запрашиваю
+    """
+    
+    # Шаг 1: Извлечение текста с изображения
+    extract_text_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": """Выведи информацию со снимка текстом всю, сделай это качественно /
+                Стандартный чек, сверху находится шапка с названием банка, который был использован для оплаты. В центре указаны сумма оплаты, ФИО плательщика,дата оплаты, место оплаты, номера счетов. В документе могут быть декоративные элементы разного цвета.""",
+                "attachments": [img_id]
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    extract_response = requests.post(base_url, headers=headers, data=extract_text_payload, verify=False)
+    if extract_response.status_code != 200:
+        delete_img(access_token, img_id)
+        return {"error": f"Ошибка извлечения текста: {extract_response.status_code}", "details": extract_response.text}
+
+    extracted_text = extract_response.json()['choices'][0]['message']['content']
+    # print("Извлечённый текст:")
+    # print(extracted_text)
+
+    # Шаг 2: Преобразование текста в JSON
+    process_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": f"{prompt}\n\nТекст документа:\n{extracted_text}"
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    process_response = requests.post(base_url, headers=headers, data=process_payload, verify=False)
+    delete_img(access_token, img_id)  # Удаляем изображение после обработки
+    if process_response.status_code == 200:
+        try:
+            raw_content = process_response.json()['choices'][0]['message']['content']
+            json_start = raw_content.find("{")
+            json_end = raw_content.rfind("}") + 1
+            if json_start != -1 and json_end != -1:
+                cleaned_json = raw_content[json_start:json_end]
+                return json.loads(cleaned_json)
+            else:
+                return {"error": "JSON не найден в ответе", "response": raw_content}
+        except Exception as e:
+            return {"error": f"Ошибка обработки JSON: {str(e)}", "response": process_response.json()}
+    else:
+        return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
+
+def process_insurance(access_token, img_id):
+    """
+    Функция для обработки полиса ДМС:
+    1. Извлекает текст с изображения.
+    2. Преобразует текст в JSON на основе заданного промпта.
+    """
+    base_url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + access_token
+    }
+
+
+    prompt = """
+    Прочитай предоставленный текст из чека и преобразуй его в формат JSON с полями:
+    - "ФИО ребенка" — Фамилия, Имя, Отчество ребенка.
+    - "ДР ребенка" — дата рождения ребенка в формате DD/MM/YYYY.
+    - "Номер полиса" — Уникальный номер полиса.
+    - "Срок действия" — Дата, до которой действителен ДМС в формате DD/MM/YYYY.
+        НЕМНОГО ИСПОЛЬЗУЙ ЛОГИКУ, В СЛУЧАЕ ЕСЛИ ФАМИЛИИ ОТЛИЧАЮТСЯ НА ОДНУ БУКВУ ВАЛИДИРУЙ КАК ТЫ БУДЕШЬ ЧТО БЫЛО И ТД
+    Убедись, что данные корректны. Игнорируй информацию о месте рождения, национальности, гражданстве и других дополнительных данных. Пример результата:
+    {
+      "ФИО ребенка": "Иванов Иван Иванович",
+      "ДР ребенка": "15/05/2010",
+      "Номер полиса": "4400 2888 9654 3821",
+      "Срок действия": "Больница",
+    }
+
+    В ответ дай только JSON который я запрашиваю
+    """
+    
+    # Шаг 1: Извлечение текста с изображения
+    extract_text_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": """Выведи информацию со снимка текстом всю, сделай это качественно /
+                Стандартный полис ДМС содержит шапку с названием фирмы Страховщика, далее идёт блок с информацией страховщика (Адрес, Реквизиты, Контактные данные), блок с информацией страхователя (ФИО, адрес, паспорт, телефон, реквизиты, гражданство), блок с информацией застрахованного (ФИО, адрес, паспорт, телефон, гражданство), варианты страхования, срок действия полиса, подпись и печать. Документ содержит декоративные элементы разных цветов, печать синего цвета.""",
+                "attachments": [img_id]
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    extract_response = requests.post(base_url, headers=headers, data=extract_text_payload, verify=False)
+    if extract_response.status_code != 200:
+        delete_img(access_token, img_id)
+        return {"error": f"Ошибка извлечения текста: {extract_response.status_code}", "details": extract_response.text}
+
+    extracted_text = extract_response.json()['choices'][0]['message']['content']
+    # print("Извлечённый текст:")
+    # print(extracted_text)
+
+    # Шаг 2: Преобразование текста в JSON
+    process_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": f"{prompt}\n\nТекст документа:\n{extracted_text}"
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    process_response = requests.post(base_url, headers=headers, data=process_payload, verify=False)
+    delete_img(access_token, img_id)  # Удаляем изображение после обработки
+    if process_response.status_code == 200:
+        try:
+            raw_content = process_response.json()['choices'][0]['message']['content']
+            json_start = raw_content.find("{")
+            json_end = raw_content.rfind("}") + 1
+            if json_start != -1 and json_end != -1:
+                cleaned_json = raw_content[json_start:json_end]
+                return json.loads(cleaned_json)
+            else:
+                return {"error": "JSON не найден в ответе", "response": raw_content}
+        except Exception as e:
+            return {"error": f"Ошибка обработки JSON: {str(e)}", "response": process_response.json()}
+    else:
+        return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
+
+def process_franchise_reference(access_token, img_id):
+    """
+    Функция для обработки справки франшизы:
+    1. Извлекает текст с изображения.
+    2. Преобразует текст в JSON на основе заданного промпта.
+    """
+    base_url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + access_token
+    }
+
+
+    prompt = """
+    Прочитай предоставленный текст из чека и преобразуй его в формат JSON с полями:
+    - "ФИО плательщика" — Фамилия, Имя, Отчество плательщика.
+    - "ФИО ребенка" — Фамилия, Имя, Отчество ребенка.
+    - "ДР ребенка" — дата рождения ребенка в формате DD/MM/YYYY.
+    - "Номер полиса" — Уникальный номер полиса.
+    - "Срок действия страхования" — Дата, до которой действительно страхование в формате DD/MM/YYYY.
+        НЕМНОГО ИСПОЛЬЗУЙ ЛОГИКУ, В СЛУЧАЕ ЕСЛИ ФАМИЛИИ ОТЛИЧАЮТСЯ НА ОДНУ БУКВУ ВАЛИДИРУЙ КАК ТЫ БУДЕШЬ ЧТО БЫЛО И ТД
+    Убедись, что данные корректны. Игнорируй информацию о месте рождения, национальности, гражданстве и других дополнительных данных. Пример результата:
+    {
+      "ФИО ребенка": "Иванов Иван Иванович",
+      "ДР ребенка": "15/05/2010",
+      "Номер полиса": "4400 2888 9654 3821",
+      "Срок действия": "Больница",
+    }
+
+    В ответ дай только JSON который я запрашиваю
+    """
+    
+    # Шаг 1: Извлечение текста с изображения
+    extract_text_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": """Выведи информацию со снимка текстом всю, сделай это качественно /
+                В справке находится информации о человеке оплатившем страхование ребенка, информация о застрахованном ребенке, информация из полиса ДМС (срок действия, номер полиса), срок дейтсвия страховки""",
+                "attachments": [img_id]
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    extract_response = requests.post(base_url, headers=headers, data=extract_text_payload, verify=False)
+    if extract_response.status_code != 200:
+        delete_img(access_token, img_id)
+        return {"error": f"Ошибка извлечения текста: {extract_response.status_code}", "details": extract_response.text}
+
+    extracted_text = extract_response.json()['choices'][0]['message']['content']
+    # print("Извлечённый текст:")
+    # print(extracted_text)
+
+    # Шаг 2: Преобразование текста в JSON
+    process_payload = json.dumps({
+        "model": "GigaChat-Max",
+        "messages": [
+            {
+                "role": "user",
+                "content": f"{prompt}\n\nТекст документа:\n{extracted_text}"
+            }
+        ],
+        "stream": False,
+        "update_interval": 0
+    })
+
+    process_response = requests.post(base_url, headers=headers, data=process_payload, verify=False)
+    delete_img(access_token, img_id)  # Удаляем изображение после обработки
+    if process_response.status_code == 200:
+        try:
+            raw_content = process_response.json()['choices'][0]['message']['content']
+            json_start = raw_content.find("{")
+            json_end = raw_content.rfind("}") + 1
+            if json_start != -1 and json_end != -1:
+                cleaned_json = raw_content[json_start:json_end]
+                return json.loads(cleaned_json)
+            else:
+                return {"error": "JSON не найден в ответе", "response": raw_content}
+        except Exception as e:
+            return {"error": f"Ошибка обработки JSON: {str(e)}", "response": process_response.json()}
+    else:
+        return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
+
