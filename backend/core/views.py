@@ -1,5 +1,6 @@
 import os
 
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets, status
 from rest_framework.parsers import MultiPartParser
@@ -8,11 +9,12 @@ from rest_framework.views import APIView
 
 from core.models import Document
 from core.serializers import DocumentSerializer
-from core.converters import FileConverter
+from core.converters import FileConverter,remove_dir
 
 from core.doc_services import DataInspector
 
 from core.doc_services import delete_garbage_file
+
 
 
 def index(request):
@@ -149,7 +151,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 class CombineImagesToPDFView(APIView):
     def get(self, request):
-
         try:
             converter = FileConverter()
             output_pdf_path = converter.convert_images_to_pdf(request.session.session_key)
@@ -164,5 +165,17 @@ class CombineImagesToPDFView(APIView):
                 return response
         except Document.DoesNotExist:
             return JsonResponse({'error': 'Session ID not found.'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UserDataView(APIView):
+
+    def delete(self, request):
+        try:
+            session_id=request.session.session_key
+            base_folder = os.path.join(settings.MEDIA_ROOT, 'backend/documents', session_id)
+
+            remove_dir(session_id,base_folder)
+            return JsonResponse({'message': 'Success'}, status=200)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

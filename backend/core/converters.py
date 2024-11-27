@@ -7,6 +7,33 @@ from django.conf import settings
 from PyPDF2 import PdfReader, PdfWriter
 
 
+def remove_dir(session_id,
+              base_folder):
+    from core.models import Document, MedicalInsurance
+    import shutil
+
+    if os.path.exists(base_folder):
+        for item in os.listdir(base_folder):
+            item_path = os.path.join(base_folder, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+
+    try:
+        shutil.rmtree(base_folder)
+        print(f"Directory '{base_folder}' and its contents deleted successfully.")
+    except OSError as e:
+        print(f"Error: {e.strerror}")
+
+    Document.objects.filter(session_id=session_id).delete()
+
+    medicalInsurance = MedicalInsurance.objects.get(session_id=session_id)
+    medicalInsurance.father.delete()
+    medicalInsurance.mother.delete()
+    medicalInsurance.delete()
+
+
 
 
 class FileConverter:
@@ -86,40 +113,14 @@ class FileConverter:
         #     from core.models import Document
         #     images[0].save(output_pdf_path, save_all=True, append_images=images[1:])
 
-        self.clear_dir(session_id,image_files,
-              output_pdf_path,
-              base_folder)
 
         Document.objects.create(
+            name =f'{session_id}_combined.pdf',
             session_id=session_id,
             path=output_pdf_path.replace(settings.MEDIA_ROOT, '')  # Относительный путь для хранения
         )
 
         return output_pdf_path
 
-    def clear_dir(self,session_id,
-                  image_files,
-                  output_pdf_path,
-                  base_folder):
-        from core.models import Document,MedicalInsurance
-        import shutil
 
-
-        if os.path.exists(base_folder):
-            for item in os.listdir(base_folder):
-                item_path = os.path.join(base_folder, item)
-                if item_path != output_pdf_path:
-                    if os.path.isfile(item_path):
-                        os.remove(item_path)
-                    elif os.path.isdir(item_path):
-                        shutil.rmtree(item_path)
-
-        Document.objects.filter(session_id=session_id).exclude(
-            path=output_pdf_path.replace(settings.MEDIA_ROOT, '')
-        ).delete()
-
-        medicalInsurance = MedicalInsurance.objects.get(session_id=session_id)
-        medicalInsurance.father.delete()
-        medicalInsurance.mother.delete()
-        medicalInsurance.delete()
 
