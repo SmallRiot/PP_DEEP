@@ -2,18 +2,20 @@ import { downloadFile } from "../../redux/slices/fileSlice";
 import BorderButton from "../BorderButton/BorderButton";
 import { useSelector, useDispatch } from "react-redux";
 import classes from "./DownloadPage.module.css";
-import { useEffect } from "react";
+import jackdaw from "../../assets/jackdaw.png";
+import { useEffect, useState } from "react";
 
 const DownloadPage = () => {
   const dispatch = useDispatch();
   const { downloadData, downloadStatus, downloadError } = useSelector(
     (state) => state.file
   );
+  const [isRight, setIsRight] = useState(false);
 
   const handleDownload = () => {
-    console.log("click");
-    dispatch(downloadFile("12"));
-    console.log("post click");
+    if (isRight) {
+      dispatch(downloadFile("12"));
+    }
   };
 
   useEffect(() => {
@@ -22,7 +24,7 @@ const DownloadPage = () => {
       const url = window.URL.createObjectURL(new Blob([downloadData]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "document.pdf"); // Укажите имя файла
+      link.setAttribute("download", "document.pdf");
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -36,19 +38,31 @@ const DownloadPage = () => {
       </div>
 
       <div className={classes.card}>
-        <div>
-          <div>Согласен на удаление перс данных </div>
+        <div className={classes.controller}>
+          <div className={classes.rightBlock}>
+            <div
+              className={classes.checkBox}
+              style={{ backgroundColor: isRight ? "#148F2B" : "#FFFFFF" }}
+              onClick={() => setIsRight(!isRight)}
+            >
+              <img
+                src={jackdaw}
+                alt=""
+                style={{ display: isRight ? "block" : "none" }}
+              />
+            </div>
+            <p>Согласие на удаление перс данных</p>
+          </div>
+
           <div
             className={classes.btn}
             onClick={handleDownload}
-            style={{ margin: "auto" }}
+            style={{ opacity: isRight ? "1" : ".5" }}
           >
             <p>Скачать</p>
           </div>
         </div>
       </div>
-
-      <button onClick={handleDownload}>Download</button>
     </div>
   );
 };

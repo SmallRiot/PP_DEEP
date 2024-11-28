@@ -20,6 +20,30 @@
   flex-direction: column;
 }
 
+.controller{
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.rightBlock {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 18px;
+}
+
+.checkBox {
+  height: 40px;
+  width: 40px;
+  border: 2px solid #148F2B;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .btn{
   padding: 12px 24px;
   border: 2px solid #148F2B;
@@ -27,4 +51,9 @@
   font-size: 24px;
   border-radius: 16px;
   cursor: pointer;
+  opacity: .5;
+}
+
+.btnActive{
+  opacity: 1;
 }

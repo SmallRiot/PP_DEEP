@@ -16,6 +16,7 @@ export const uploadFile = createAsyncThunk(
           headers: {
             "Content-Type": "multipart/form-data",
           },
+          withCredentials: true,
         }
       );
 

@@ -44,10 +44,6 @@
   font-size: 18px;
 }
 
-.checkBox input[type="checkbox"] {
-  display: none;
-}
-
 .checkBox{
   height: 40px;
   width: 40px;
