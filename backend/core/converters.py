@@ -6,36 +6,6 @@ from pdf2image import convert_from_bytes
 from django.conf import settings
 from PyPDF2 import PdfReader, PdfWriter
 
-
-def remove_dir(session_id,
-              base_folder):
-    from core.models import Document, MedicalInsurance
-    import shutil
-
-    if os.path.exists(base_folder):
-        for item in os.listdir(base_folder):
-            item_path = os.path.join(base_folder, item)
-            if os.path.isfile(item_path):
-                os.remove(item_path)
-            elif os.path.isdir(item_path):
-                shutil.rmtree(item_path)
-
-    try:
-        shutil.rmtree(base_folder)
-        print(f"Directory '{base_folder}' and its contents deleted successfully.")
-    except OSError as e:
-        print(f"Error: {e.strerror}")
-
-    Document.objects.filter(session_id=session_id).delete()
-
-    medicalInsurance = MedicalInsurance.objects.get(session_id=session_id)
-    medicalInsurance.father.delete()
-    medicalInsurance.mother.delete()
-    medicalInsurance.delete()
-
-
-
-
 class FileConverter:
     """Класс для конвертации файлов в нужный формат."""
     def __init__(self, file=None, name=None):
@@ -53,7 +23,6 @@ class FileConverter:
             return [(self.file, self.file.name)]
         else:
             return self._process_image()
-
 
     def _process_image(self):
         """Обработка других изображений (не PNG). Конвертирует изображение в PNG."""

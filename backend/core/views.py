@@ -9,11 +9,9 @@ from rest_framework.views import APIView
 
 from core.models import Document
 from core.serializers import DocumentSerializer
-from core.converters import FileConverter,remove_dir
+from core.converters import FileConverter
 
-from core.doc_services import DataInspector
-
-from core.doc_services import delete_garbage_file
+from core.doc_services import DataInspector,remove_dir,check_is_file_exist_and_delete,delete_garbage_file
 
 
 
@@ -38,8 +36,9 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        name, ext = os.path.splitext(request.FILES.get('path').name)
 
-        self.perform_create(serializer, session_id)
+        self.perform_create(serializer,name, session_id)
 
         # Первое заявление
         statement1 = '''
@@ -128,7 +127,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 delete_garbage_file(saved_instance.id)
                 return response
         elif ("statement" in saved_instance.name):
-            inspector = DataInspector(statement2)
+            inspector = DataInspector(statement1)
             response= inspector.check_statement(session_id)
             if(response.status_code == 400):
                 delete_garbage_file(saved_instance.id)
@@ -140,11 +139,10 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 delete_garbage_file(saved_instance.id)
                 return response
 
-
         return JsonResponse(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-
-    def perform_create(self, serializer, session_id=None):
+    def perform_create(self, serializer,file_name, session_id):
+        check_is_file_exist_and_delete(file_name,session_id)
         serializer.save(session_id=session_id)
 
 
@@ -154,7 +152,6 @@ class CombineImagesToPDFView(APIView):
         try:
             converter = FileConverter()
             output_pdf_path = converter.convert_images_to_pdf(request.session.session_key)
-
             if not os.path.exists(output_pdf_path):
                 return JsonResponse({'error': 'PDF file could not be created.'},
                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)

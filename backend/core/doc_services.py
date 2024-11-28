@@ -11,6 +11,34 @@ from datetime import datetime
 from backend import settings
 
 
+def remove_dir(session_id,
+              base_folder):
+    from core.models import Document, MedicalInsurance
+    import shutil
+
+    if os.path.exists(base_folder):
+        for item in os.listdir(base_folder):
+            item_path = os.path.join(base_folder, item)
+            if os.path.isfile(item_path):
+                os.remove(item_path)
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+
+    try:
+        shutil.rmtree(base_folder)
+        print(f"Directory '{base_folder}' and its contents deleted successfully.")
+    except OSError as e:
+        print(f"Error: {e.strerror}")
+
+    Document.objects.filter(session_id=session_id).delete()
+
+    medicalInsurance = MedicalInsurance.objects.get(session_id=session_id)
+    medicalInsurance.father.delete()
+    medicalInsurance.mother.delete()
+    medicalInsurance.delete()
+
+
+
 def parse_date(date_str, date_name):
     try:
         return datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -36,10 +64,12 @@ def delete_garbage_file(id):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-
     doc.delete()
 
-
+def check_is_file_exist_and_delete(_file_name,_session_id):
+    doc = Document.objects.filter(name=_file_name+"_" +_session_id, session_id=_session_id).first()
+    if doc:
+        delete_garbage_file(doc.id)
 
 class DataInspector:
     def __init__(self, json_data):
@@ -148,7 +178,6 @@ class DataInspector:
                 child_birth_date = datetime.strptime(child_birth_date, '%d/%m/%Y').strftime('%Y-%m-%d')
 
             clear_exist_medical_insurance(_session_id)
-
 
             father = Parent(
                 name = father_name,
