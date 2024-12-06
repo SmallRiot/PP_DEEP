@@ -27,6 +27,11 @@ const Card = ({ obj }) => {
   const handleUploadClick = () => {
     fileInputRef.current.click();
   };
+  const handleUpload = () => {
+    // if (isRight || uploadStatus === "succeeded") {
+    dispatch(initUploadFile());
+    // }
+  };
   console.log("Render Card");
   return (
     <div className={classes.wrapper}>
@@ -62,22 +67,24 @@ const Card = ({ obj }) => {
         </div>
       )}
       <div className={classes.downBlock}>
-        <div className={classes.rightBlock}>
-          <div
-            className={classes.checkBox}
-            style={{ backgroundColor: isRight ? "#148F2B" : "#FFFFFF" }}
-            onClick={() => setIsRight(!isRight)}
-          >
-            <img
-              src={jackdaw}
-              alt=""
-              style={{ display: isRight ? "block" : "none" }}
-            />
+        {uploadStatus === "failed" && (
+          <div className={classes.rightBlock}>
+            <div
+              className={classes.checkBox}
+              style={{ backgroundColor: isRight ? "#148F2B" : "#FFFFFF" }}
+              onClick={() => setIsRight(!isRight)}
+            >
+              <img
+                src={jackdaw}
+                alt=""
+                style={{ display: isRight ? "block" : "none" }}
+              />
+            </div>
+            <p>Документ заполнен верно</p>
           </div>
-          <p>Документ заполнен верно</p>
-        </div>
+        )}
         <BorderButton
-          onClick={() => dispatch(initUploadFile())}
+          onClick={handleUpload}
           path={obj.path}
           style={{ marginLeft: "auto" }}
         />

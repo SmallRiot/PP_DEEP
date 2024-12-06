@@ -5,6 +5,7 @@ import { selectOption } from "../../redux/slices/radioSlice";
 const RadioButtons = () => {
   const dispatch = useDispatch();
   const selected = useSelector((state) => state.radio.selectedOption);
+  const freeze = useSelector((state) => state.radio.freeze);
 
   console.log(selected);
   return (
@@ -13,7 +14,11 @@ const RadioButtons = () => {
         <p>Наличными</p>
         <div
           className={classes.dot}
-          onClick={() => dispatch(selectOption("cash"))}
+          onClick={() => {
+            if (!freeze) {
+              dispatch(selectOption("cash"));
+            }
+          }}
         >
           <span
             className={`${classes.down} ${
@@ -31,7 +36,11 @@ const RadioButtons = () => {
         <p>Безналичный расчет</p>
         <div
           className={classes.dot}
-          onClick={() => dispatch(selectOption("nonCash"))}
+          onClick={() => {
+            if (!freeze) {
+              dispatch(selectOption("nonCash"));
+            }
+          }}
         >
           <span
             className={`${classes.down} ${

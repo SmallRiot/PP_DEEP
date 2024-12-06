@@ -1,8 +1,16 @@
 import classes from "./DownloadButton.module.css";
 
-const DownloadButton = ({ style, text, onClick }) => {
+const DownloadButton = ({ style, text, onClick, freeze = false }) => {
   return (
-    <div onClick={onClick} className={classes.btn} style={style}>
+    <div
+      onClick={() => {
+        if (!freeze) {
+          onClick();
+        }
+      }}
+      className={`${classes.btn} ${freeze ? classes.btnDisable : ""}`}
+      style={style}
+    >
       <p>{text}</p>
     </div>
   );

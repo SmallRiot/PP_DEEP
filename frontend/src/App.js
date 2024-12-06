@@ -18,7 +18,7 @@ function App() {
         <Route path="" element={<Start />} />
         <Route path="/bank" element={<BankPage />}>
           {arr.map((el) => {
-            if (el.initPath !== "check") {
+            if (el.initPath !== "/bank/checks") {
               return <Route path={el.initPath} element={<Card obj={el} />} />;
             } else {
               return (

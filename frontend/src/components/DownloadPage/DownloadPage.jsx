@@ -51,7 +51,7 @@ const DownloadPage = () => {
                 style={{ display: isRight ? "block" : "none" }}
               />
             </div>
-            <p>Согласие на удаление перс данных</p>
+            <p>Согласие на удаление персональных данных</p>
           </div>
 
           <div

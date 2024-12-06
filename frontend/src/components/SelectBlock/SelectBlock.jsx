@@ -3,7 +3,8 @@ import SubmitButton from "../SubmitButton/SubmitButton";
 import classes from "./SelectBlock.module.css";
 import { useDispatch } from "react-redux";
 import { setRouts } from "../../redux/slices/docsSlice";
-import { all, franchise, medical } from "../../mock/docs";
+import { all, franchise, medical, titles } from "../../mock/docs";
+import { setTitle } from "../../redux/slices/titleSlice";
 
 const SelectBlock = () => {
   const dispatch = useDispatch();
@@ -16,7 +17,10 @@ const SelectBlock = () => {
           <Link to="/bank/certificate">
             <div
               className={classes.item}
-              onClick={() => dispatch(setRouts(franchise))}
+              onClick={() => {
+                dispatch(setRouts(franchise));
+                dispatch(setTitle(titles[0]));
+              }}
             >
               <p className={classes.name}>
                 Компенсация при оплате работником <span>Банка франшизы</span>
@@ -27,7 +31,10 @@ const SelectBlock = () => {
           <Link to="/bank/certificate">
             <div
               className={classes.item}
-              onClick={() => dispatch(setRouts(medical))}
+              onClick={() => {
+                dispatch(setRouts(medical));
+                dispatch(setTitle(titles[1]));
+              }}
             >
               <p className={classes.name}>
                 Компенсация при оплате <span>медицинских услуг</span>
@@ -38,7 +45,10 @@ const SelectBlock = () => {
           <Link to="/bank/certificate" className={classes.item3}>
             <div
               className={classes.item}
-              onClick={() => dispatch(setRouts(all))}
+              onClick={() => {
+                dispatch(setRouts(all));
+                dispatch(setTitle(titles[2]));
+              }}
             >
               <p className={classes.name}>
                 Компенсация при оплате{" "}

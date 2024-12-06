@@ -23,7 +23,7 @@ export const uploadFile = createAsyncThunk(
       return response.data;
     } catch (error) {
       return error.response
-        ? rejectWithValue(error.response.data)
+        ? rejectWithValue(error.response.data.path)
         : rejectWithValue("Отсутствует соединение с сервером");
     }
   }
