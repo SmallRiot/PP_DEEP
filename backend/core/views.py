@@ -245,8 +245,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 delete_garbage_file(saved_instance.id)
                 return response
         elif ("cert_of_payment_med_services" in saved_instance.name):
-            res = double_page_response(access_token, sourse_id)
-            # res_max = sup_response(res, auth_token)
+            res = double_page_response(info, auth_token)
+
             inspector = DataInspector(json.dumps(res))
             response = inspector.check_payment_reference(session_id)
             if (response.status_code == 400):
@@ -258,15 +258,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
             else:
                 res = process_insurance(access_token, sourse_id)
 
-            # res_max = sup_response(res, auth_token)
             inspector = DataInspector(json.dumps(res))
             response = inspector.check_policy(session_id)
             if (response.status_code == 400):
                 delete_garbage_file(saved_instance.id)
                 return response
         elif ("cert_about_paid_franchise_VMI" in saved_instance.name):
-            res = reference_six_response(access_token, sourse_id)
-            # res_max = sup_response(res, auth_token)
+            res = reference_six_response(info, auth_token)
+
             inspector = DataInspector(json.dumps(res))
             response = inspector.check_policy_reference(session_id)
             if (response.status_code == 400):
