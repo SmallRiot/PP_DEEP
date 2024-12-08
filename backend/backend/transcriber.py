@@ -280,7 +280,7 @@ def reference_response(user_content, auth_token):
   return json.loads(res.content)
 
 """Чек"""
-def reference_response(user_content, auth_token):
+def reciept_response(user_content, auth_token):
 
   model = GigaChat(
       credentials=auth_token,
@@ -590,7 +590,7 @@ def process_reciept(access_token, img_id):
         return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
 
 """Выписка по чеку"""
-def process_reciept(access_token, img_id):
+def process_reference(access_token, img_id):
     """
     Функция для обработки справок по чекам:
     1. Извлекает текст с изображения.
