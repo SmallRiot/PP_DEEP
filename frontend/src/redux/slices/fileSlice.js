@@ -7,7 +7,7 @@ export const uploadFile = createAsyncThunk(
   async (file, { rejectWithValue }) => {
     const formData = new FormData();
     formData.append("path", file);
-    console.log("FileName: " + file.name);
+
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/documents/",

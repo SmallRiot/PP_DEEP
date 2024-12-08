@@ -2,12 +2,11 @@ import classes from "./RadioButtons.module.css";
 import { useSelector, useDispatch } from "react-redux";
 import { selectOption } from "../../redux/slices/radioSlice";
 
-const RadioButtons = () => {
+const RadioButtons = ({ index }) => {
   const dispatch = useDispatch();
   const selected = useSelector((state) => state.radio.selectedOption);
-  const freeze = useSelector((state) => state.radio.freeze);
-
-  console.log(selected);
+  const freezes = useSelector((state) => state.radio.freeze);
+  console.log("Selected: " + selected[index]);
   return (
     <div className={classes.block}>
       <div className={classes.radioBtn}>
@@ -15,19 +14,19 @@ const RadioButtons = () => {
         <div
           className={classes.dot}
           onClick={() => {
-            if (!freeze) {
-              dispatch(selectOption("cash"));
+            if (!freezes[index]) {
+              dispatch(selectOption({ select: "cash", index }));
             }
           }}
         >
           <span
             className={`${classes.down} ${
-              selected === "cash" ? classes.downActive : ""
+              selected[index] === "cash" ? classes.downActive : ""
             }`}
           ></span>
           <span
             className={`${classes.up} ${
-              selected === "cash" ? classes.upActive : ""
+              selected[index] === "cash" ? classes.upActive : ""
             }`}
           ></span>
         </div>
@@ -37,19 +36,19 @@ const RadioButtons = () => {
         <div
           className={classes.dot}
           onClick={() => {
-            if (!freeze) {
-              dispatch(selectOption("nonCash"));
+            if (!freezes[index]) {
+              dispatch(selectOption({ select: "nonCash", index }));
             }
           }}
         >
           <span
             className={`${classes.down} ${
-              selected === "nonCash" ? classes.downActive : ""
+              selected[index] === "nonCash" ? classes.downActive : ""
             }`}
           ></span>
           <span
             className={`${classes.up} ${
-              selected === "nonCash" ? classes.upActive : ""
+              selected[index] === "nonCash" ? classes.upActive : ""
             }`}
           ></span>
         </div>
