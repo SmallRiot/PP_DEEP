@@ -119,7 +119,49 @@ def images_to_pdf(image_paths, output_pdf_path):
 
     pdf.output(output_pdf_path)
 
+"""Очищение вывода в запросах"""
+def extract_content(s):
+    start_index = s.find('{')
+    end_index = s.rfind('}')
+
+    if start_index != -1 and end_index != -1:
+        return s[start_index:end_index + 1]
+    else:
+        return ""
+
 """PDF методы"""
+
+def get_statement_info(access_token, img_id):
+  
+  url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+
+  payload = json.dumps({
+    "model": "GigaChat-Max",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Прочитай данный текст заявления и выведи из него всю важную информацию в виде списка, а именно: Название, ФИО заявителя, ФИО ребенка, ДР ребенка, Дата подписи, Наличие подписи.",
+        "attachments": [
+          img_id
+        ]
+      }
+    ],
+    "stream": False,
+    "update_interval": 0
+  })
+
+  headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + access_token
+  }
+
+  response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+  delete_img(access_token, img_id)
+
+  if response.status_code == 200:
+    return response.json()['choices'][0]['message']['content']
+  else:
+    return response.status_code
 
 def get_info(access_token, img_id):
   
@@ -165,14 +207,14 @@ def birth_response(user_content, auth_token):
 
   messages = [
       SystemMessage(
-          content="Ты вадидатор данных, который получает информацию и образует json-файл по полям на выходе. Даты переводи в формат dd/mm/yyyy В поле Название всегда указывай СВИДЕТЕЛЬСТВО О РОЖДЕНИИ. Выведи только следующие поля: Название, ФИО ребенка, ФИО отца, ФИО матери, ДР ребенка"
+          content="Ты валидатор данных, который получает информацию и образует json-файл по полям на выходе. Даты переводи в формат dd/mm/yyyy В поле Название всегда указывай СВИДЕТЕЛЬСТВО О РОЖДЕНИИ. Выведи только следующие поля: Название, ФИО ребенка, ФИО отца, ФИО матери, ДР ребенка"
     )
   ] 
 
   messages.append(HumanMessage(content=user_content))
   res = model.invoke(messages)
   messages.append(res)
-  return json.loads(res.content)
+  return json.loads(extract_content(res.content))
 
 """Свидетельство о браке"""
 def marriage_response(user_content, auth_token):
@@ -186,14 +228,14 @@ def marriage_response(user_content, auth_token):
 
   messages = [
       SystemMessage(
-          content="Ты вадидатор данных, который получает информацию и образует json-файл по полям на выходе. Даты переводи в формат dd/mm/yyyy В поле Название всегда указывай СВИДЕТЕЛЬСТВО О БРАКЕ. Выведи только следующие поля: Название, ФИО мужа, ФИО жены"
+          content="Ты валидатор данных, который получает информацию и образует json-файл по полям на выходе. Даты переводи в формат dd/mm/yyyy В поле Название всегда указывай СВИДЕТЕЛЬСТВО О БРАКЕ. Выведи только следующие поля: Название, ФИО мужа, ФИО жены"
     )
   ] 
 
   messages.append(HumanMessage(content=user_content))
   res = model.invoke(messages)
   messages.append(res)
-  return json.loads(res.content)
+  return json.loads(extract_content(res.content))
 
 """Заявление"""
 def statement_response(user_content, auth_token):
@@ -207,14 +249,15 @@ def statement_response(user_content, auth_token):
 
   messages = [
       SystemMessage(
-          content="Ты валидатор данных, который получает информацию и образует json-файл по полям на выходе. В поле Название всегда пиши Заявление. Даты переводи в формат dd/mm/yyyy Выведи только следующие поля: Название, ФИО заявителя, ФИО ребенка, ДР ребенка, Дата подписи, Наличие подписи."
+          content="Ты валидатор данных, который получает информацию и выдает ответ в json-формате, без указания, что это json по полям на выходе. В поле Название всегда пиши Заявление. Даты переводи в формат dd/mm/yyyy Выведи только следующие поля: Название, ФИО заявителя, ФИО ребенка, ДР ребенка, Дата подписи, Наличие подписи."
     )
   ] 
 
   messages.append(HumanMessage(content=user_content))
   res = model.invoke(messages)
+  print(res)
   messages.append(res)
-  return json.loads(res.content)
+  return json.loads(extract_content(res.content))
 
 """Справка 6.15"""
 def reference_six_response(user_content, auth_token):
@@ -235,7 +278,7 @@ def reference_six_response(user_content, auth_token):
   messages.append(HumanMessage(content=user_content))
   res = model.invoke(messages)
   messages.append(res)
-  return json.loads(res.content)
+  return json.loads(extract_content(res.content))
 
 """Справка об оплате медицинских услуг"""
 def double_page_response(user_content, auth_token):
@@ -249,14 +292,14 @@ def double_page_response(user_content, auth_token):
 
   messages = [
       SystemMessage(
-          content="Ты валидатор данных, который получает информацию и выдаёт ответ в json-формате, без указания, что это json по полям на выходе. Даты переводи в формат dd/mm/yyyy В поле Название всегда пиши - Справка об оплате медицинских услуг. Выведи только следующие поля: Название, ФИО налогоплательщика, ДР налогоплательщика, Название организации, ИНН, Паспортные данные, Сумма расходов, ФИО выдавшего справку, ФИО ребенка, ДР ребенка, Место оплаты, Дата, Подпись."
+          content="Ты валидатор данных, который получает информацию и выдаёт ответ в json-формате, без указания, что это json по полям на выходе. Даты переводи в формат dd/mm/yyyy В поле Название всегда пиши - Справка об оплате медицинских услуг. Выведи только следующие поля: Название, ФИО налогоплательщика, ДР налогоплательщика, Название организации, ИНН, Паспортные данные, Сумма расходов, ФИО выдавшего справку, ФИО ребенка, ДР ребенка, Дата, Подпись."
     )
   ] 
 
   messages.append(HumanMessage(content=user_content))
   res = model.invoke(messages)
   messages.append(res)
-  return json.loads(res.content)
+  return json.loads(extract_content(res.content))
 
 """Выписка по чеку"""
 def reference_response(user_content, auth_token):
@@ -277,7 +320,7 @@ def reference_response(user_content, auth_token):
   messages.append(HumanMessage(content=user_content))
   res = model.invoke(messages)
   messages.append(res)
-  return json.loads(res.content)
+  return json.loads(extract_content(res.content))
 
 """Чек"""
 def reciept_response(user_content, auth_token):
@@ -298,7 +341,7 @@ def reciept_response(user_content, auth_token):
   messages.append(HumanMessage(content=user_content))
   res = model.invoke(messages)
   messages.append(res)
-  return json.loads(res.content)
+  return json.loads(extract_content(res.content))
 
 """Полис ДМС"""
 def insurance_response(user_content, auth_token):
@@ -319,7 +362,7 @@ def insurance_response(user_content, auth_token):
   messages.append(HumanMessage(content=user_content))
   res = model.invoke(messages)
   messages.append(res)
-  return json.loads(res.content)
+  return json.loads(extract_content(res.content))
 
 """Методы для картинок"""
 
@@ -766,3 +809,4 @@ def process_insurance(access_token, img_id):
             return {"error": f"Ошибка обработки JSON: {str(e)}", "response": process_response.json()}
     else:
         return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
+
