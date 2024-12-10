@@ -93,6 +93,33 @@ def delete_img(access_token, img_id):
   else:
     return response.status_code
 
+def image_to_pdf(image_path, output_pdf_path):
+
+    pdf = FPDF()
+
+    with Image.open(image_path) as img:
+        width, height = img.size
+
+    pdf.add_page()
+
+    pdf_width = 210
+    pdf_height = 297
+
+    if width > height:
+        scale_factor = pdf_width / width
+        img_width = pdf_width
+        img_height = height * scale_factor
+    else:
+        scale_factor = pdf_height / height
+        img_width = width * scale_factor
+        img_height = pdf_height
+
+    pdf.image(image_path, x=0, y=0, w=img_width, h=img_height)
+      
+    pdf.output(output_pdf_path)
+
+
+
 def images_to_pdf(image_paths, output_pdf_path):
 
     pdf = FPDF()
