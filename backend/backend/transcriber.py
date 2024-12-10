@@ -260,7 +260,7 @@ def marriage_response(user_content, auth_token):
 
   messages = [
       SystemMessage(
-          content="Ты валидатор данных, который получает информацию и образует json-файл по полям на выходе. Даты переводи в формат dd/mm/yyyy В поле Название всегда указывай СВИДЕТЕЛЬСТВО О БРАКЕ. Выведи только следующие поля: Название, ФИО мужа, ФИО жены"
+          content="Ты валидатор данных, который получает информацию и образует json-файл по полям на выходе. Даты переводи в формат dd/mm/yyyy В поле Название всегда указывай СВИДЕТЕЛЬСТВО О БРАКЕ. Сформируй ФИО мужа и ФИО жены, полученные после заключения брака с использованием ПРИСВОЕННЫХ ФАМИЛИЙ, И ОРИГИНАЛЬНЫХ ИМЕНИ И ОТЧЕСТВА. Выведи только следующие поля: Название, ФИО мужа, ФИО жены"
     )
   ] 
 
@@ -269,27 +269,6 @@ def marriage_response(user_content, auth_token):
   messages.append(res)
   return json.loads(extract_content(res.content))
 
-"""Заявление"""
-def statement_response(user_content, auth_token):
-
-  model = GigaChat(
-      credentials=auth_token,
-      scope="GIGACHAT_API_PERS",
-      model="GigaChat",
-      verify_ssl_certs=False,
-  )
-
-  messages = [
-      SystemMessage(
-          content="Ты валидатор данных, который получает информацию и выдает ответ в json-формате, без указания, что это json по полям на выходе. В поле Название всегда пиши Заявление. Даты переводи в формат dd/mm/yyyy Выведи только следующие поля строго с такими же названиями: Название, ФИО заявителя, ФИО ребенка, ДР ребенка, Дата подписи, Наличие подписи."
-    )
-  ] 
-
-  messages.append(HumanMessage(content=user_content))
-  res = model.invoke(messages)
-  print(res)
-  messages.append(res)
-  return json.loads(extract_content(res.content))
 
 """Справка 6.15"""
 def reference_six_response(user_content, auth_token):
