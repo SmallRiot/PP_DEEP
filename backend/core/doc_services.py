@@ -8,8 +8,6 @@ from django.http import JsonResponse
 from .models import MedicalInsurance, Parent, Document
 from datetime import datetime
 
-from backend import settings
-
 
 def remove_dir(session_id,
               base_folder):
@@ -37,13 +35,23 @@ def remove_dir(session_id,
     medicalInsurance.mother.delete()
     medicalInsurance.delete()
 
-
-
 def parse_date(date_str, date_name):
-    try:
-        return datetime.strptime(date_str, '%Y-%m-%d').date()
-    except ValueError:
-        return JsonResponse({'message': f"Не удалось распознать поле \'{date_name}\'"}, status=400)
+    formats = ['%d/%m/%Y', '%m/%d/%Y','%Y-%m-%d', '%d-%m-%Y', '%m-%d-%Y']
+    for fmt in formats:
+        try:
+            parsed_date = datetime.strptime(date_str, fmt)
+            #parsed_date.strftime('%Y-%m-%d')
+            return parsed_date.date()
+        except ValueError:
+            continue
+    # Если ни один формат не подошел, возвращаем JsonResponse с сообщением об ошибке
+    return JsonResponse({'message': f"Не удалось распознать поле '{date_name}'"}, status=400)
+
+# def parse_date(date_str, date_name):
+#     try:
+#         return datetime.strptime(date_str, '%Y-%m-%d').date()
+#     except ValueError:
+#         return JsonResponse({'message': f"Не удалось распознать поле \'{date_name}\'"}, status=400)
 
 def clear_exist_medical_insurance(_session_id):
     existing_insurances = MedicalInsurance.objects.filter(session_id=_session_id)
@@ -76,16 +84,19 @@ class DataInspector:
         self.json_data = json_data
 
     def check_marriage_certificate(self, _session_id):
+        """
+       Функция для обработки св-ва о браке
+       """
         try:
             data = json.loads(self.json_data)
 
-            # Извлечение данных из JSON
-            file_name = data.get('Название документа')
+            if data:
+                file_name = data.get('Название')
+                father_name = data.get('ФИО мужа')
+                mother_name = data.get('ФИО жены')
+
             if(file_name != "СВИДЕТЕЛЬСТВО О ЗАКЛЮЧЕНИИ БРАКА" and file_name != "СВИДЕТЕЛЬСТВО О БРАКЕ"):
                 return JsonResponse({'message': "Загружен неверный файл"}, status=400)
-
-            father_name = data.get('ФИО мужа')
-            mother_name = data.get('ФИО жены')
 
             try:
                 medical_insurance = MedicalInsurance.objects.get(session_id=_session_id)
@@ -104,27 +115,30 @@ class DataInspector:
             return JsonResponse({'message': 'SUCCESS'}, status=200)
 
         except json.JSONDecodeError:
-            raise ValueError("Invalid JSON data")
+            raise ValueError("Не удалось распознать данные, возможно загружен неверный файл")
         except ValidationError as e:
             raise ValueError(f"Validation error: {e}")
 
     def check_statement(self, _session_id):
+        """
+          Функция для обработки заявления
+       """
         try:
             data = json.loads(self.json_data)
 
+            if data:
+                file_name = data.get('Название')
+                applicant_name = data.get('ФИО заявителя')
+                kid_name = data.get('ФИО ребенка')
+                signature = data.get('Наличие подписи')
+                signature_date = parse_date(data.get('Дата подписи'), 'Дата подписи')
+                kid_birth = parse_date(data.get('ДР ребенка'), 'ДР ребенка')
+
             # Извлечение данных из JSON
-            file_name = data.get('Название документа')
-            if(file_name != "Заявление"):
+            if not ( "заявление" in file_name.lower()):
                 return JsonResponse({'message': "Загружен неверный файл"}, status=400)
 
-            signature = data.get('Подпись')
-            date = parse_date(data.get('Дата'),'Дата')
-            if isinstance(date, JsonResponse): return date
-
-            applicant_name = data.get('ФИО заявителя')
-            kid_name = data.get('ФИО ребенка')
-
-            kid_birth = parse_date(data.get('Дата рождения ребенка'),'Дата рождения ребенка')
+            if isinstance(signature_date, JsonResponse): return signature_date
             if isinstance(kid_birth, JsonResponse): return kid_birth
 
             try:
@@ -135,6 +149,9 @@ class DataInspector:
 
             if(not signature):
                 return JsonResponse({'message': 'Подпись не распознана'}, status=400)
+            if (signature_date.year != datetime.now().year):
+                return JsonResponse(
+                    {'message': f"Дата подписи не от этого года"}, status=400)
             elif(kid_name != medical_insurance.child_name):
                 return JsonResponse({'message': 'Неверно указаны ФИО ребенка'}, status=400)
             elif (kid_birth != medical_insurance.child_birth_date):
@@ -150,32 +167,29 @@ class DataInspector:
             else:
                 return JsonResponse({'message': 'Неверно указаны ФИО заявителя'}, status=400)
 
-
-
-
-
         except json.JSONDecodeError:
-            raise ValueError("Invalid JSON data")
+            raise ValueError("Не удалось распознать данные, возможно загружен неверный файл")
         except ValidationError as e:
             raise ValueError(f"Validation error: {e}")
 
-
     def check_birth_certificate(self, _session_id):
+        """
+      Функция для обработки св-ва о рождении
+      """
         try:
             data = json.loads(self.json_data)
             # Извлечение данных из JSON
-            file_name = data.get('Название документа')
+            if data:
+                file_name = data.get('Название')
+                father_name = data.get('ФИО отца')
+                mother_name = data.get('ФИО матери')
+                child_name = data.get('ФИО ребенка')
+                child_birth_date = parse_date(data.get('ДР ребенка'), 'ДР ребенка')
+
             if(file_name != "СВИДЕТЕЛЬСТВО О РОЖДЕНИИ"):
                 return JsonResponse({'message': "Загружен неверный файл"}, status=400)
 
-            father_name = data.get('ФИО отца')
-            mother_name = data.get('ФИО матери')
-            child_name = data.get('ФИО ребенка')
-            child_birth_date = data.get('ДР ребенка')
-
-            # Преобразование даты рождения ребенка в формат YYYY-MM-DD
-            if child_birth_date:
-                child_birth_date = datetime.strptime(child_birth_date, '%d/%m/%Y').strftime('%Y-%m-%d')
+            if isinstance(child_birth_date, JsonResponse): return child_birth_date
 
             clear_exist_medical_insurance(_session_id)
 
@@ -202,9 +216,11 @@ class DataInspector:
                 # Другие поля могут быть заполнены по умолчанию или оставлены пустыми
                 contract_period_start=None,
                 contract_period_end=None,
-                total_treatment_cost=None,
+                cheque_amount=None,
                 policy_number=None,
-                medical_organization_data=None
+                medical_organization_data=None,
+                is_extract_cheque_uploaded = False,
+                is_policy_case = False,
             )
 
             # Валидация и сохранение модели
@@ -215,9 +231,270 @@ class DataInspector:
             medical_insurance.save()
             return JsonResponse({'message': 'SUCCESS'}, status=200)
 
+        except json.JSONDecodeError or TypeError :
+            raise ValueError("Не удалось распознать данные, возможно загружен неверный файл")
+        except ValidationError as e:
+            raise ValueError(f"Validation error: {e}")
+
+    def check_cheque_reference(self, _session_id):
+        """
+      Функция для обработки выписки
+      """
+        try:
+            data = json.loads(self.json_data)
+            if data:
+                file_name = data.get('Название')
+                payer_name = data.get('ФИО плательщика')
+                amount = data.get('Сумма')
+                date = data.get('Дата оплаты')
+                place = data.get('Место оплаты')
+
+
+            if not ("выписка" in file_name.lower()):
+                return JsonResponse({'message': "Загружен неверный файл"}, status=400)
+
+            try:
+                medical_insurance = MedicalInsurance.objects.get(session_id=_session_id)
+            except Exception:
+                return JsonResponse(
+                    {'message': "Документ 'Свидетельство о рождении' не найден. Пожалуйста, следуйте инструкции"}, status=400)
+
+            father = medical_insurance.father
+            mother =medical_insurance.mother
+
+            if(payer_name != father.name and payer_name != mother.name):
+                return JsonResponse({'message': f"Указан другой плательщик. Ожидается: {father.name} или {mother.name}"}, status=400)
+
+            if not amount:
+                return JsonResponse({'message': f"Не удалось распознать сумму"}, status=400)
+
+            medical_insurance.cheque_amount = amount
+            medical_insurance.is_extract_cheque_uploaded = True
+            medical_insurance.save()
+            return JsonResponse({'message': 'SUCCESS'}, status=200)
+
+        except json.JSONDecodeError:
+            raise ValueError("Не удалось распознать данные, возможно загружен неверный файл")
+        except ValidationError as e:
+            raise ValueError(f"Validation error: {e}")
+
+    def check_cheque(self, _session_id):
+        """
+      Функция для обработки чеков
+      """
+        try:
+            data = json.loads(self.json_data)
+            if data:
+                file_name = data.get('Название')
+                payment_method = data.get('Способ оплаты')
+                payer_name = data.get('ФИО плательщика')
+                payment_date = parse_date(data.get('Дата оплаты'), 'Дата оплаты')
+                amount = data.get('Сумма')
+                medical_institutions = data.get('Место оплаты')
+                is_signature = data.get('Подпись')
+                is_print = data.get('Печать')
+
+            if not ("чек" in file_name.lower()):
+                return JsonResponse({'message': "Загружен неверный файл"}, status=400)
+
+            if isinstance(payment_date, JsonResponse): return payment_date
+
+            try:
+                medical_insurance = MedicalInsurance.objects.get(session_id=_session_id)
+            except Exception:
+                return JsonResponse(
+                    {'message': "Документ 'Свидетельство о рождении' не найден. Пожалуйста, следуйте инструкции"}, status=400)
+
+            father = medical_insurance.father
+            mother =medical_insurance.mother
+
+            if(payment_method == f"Безналично" and medical_insurance.is_extract_cheque_uploaded == False):
+                return JsonResponse({'message': "При безналичном расчете требуется банковская выписка"}, status=400)
+            if (payer_name != father.name and payer_name != mother.name):
+                return JsonResponse(
+                    {'message': f"Указан другой плательщик. Ожидается: {father.name} или {mother.name}"}, status=400)
+            if (payment_date.year != datetime.now().year):
+                return JsonResponse(
+                    {'message': f"Год оплаты не равен текущему году"}, status=400)
+            if medical_insurance.is_policy_case:
+                 if not (medical_insurance.contract_period_start <= payment_date  and
+                        payment_date <= medical_insurance.contract_period_end):
+                    return JsonResponse(
+                    {'message': f"Чек не входит в период действия страховой справки"}, status=400)
+            if (amount != medical_insurance.cheque_amount):
+                return JsonResponse(
+                    {'message': f"Сумма в чеке и сумма в выписке не совпадают"}, status=400)
+            if (medical_institutions != medical_insurance.medical_organization_data):
+                return JsonResponse(
+                    {'message': f"Данные мед. организации не совпадают. Ожидается: {medical_insurance.medical_organization_data}"}, status=400)
+            if not is_signature:
+                return JsonResponse({'message': f"Отсутствует подпись"},status=400)
+            if not is_print:
+                return JsonResponse({'message': f"Отсутствует печать"},status=400)
+
+            medical_insurance.cheque_amount = 0
+            medical_insurance.is_extract_cheque_uploaded = False
+            medical_insurance.save()
+
+
+        except json.JSONDecodeError:
+            raise ValueError("Не удалось распознать данные, возможно загружен неверный файл")
+        except ValidationError as e:
+            raise ValueError(f"Validation error: {e}")
+
+    def check_payment_reference(self, _session_id):
+        """
+        Функция для обработки справки об оплате мед услуг
+      """
+        try:
+            data = json.loads(self.json_data)
+            if data:
+                file_name = data.get('Название')
+                payer_name = data.get('ФИО налогоплательщика')
+                kid_name = data.get('ФИО ребенка')
+                kid_birth = parse_date(data.get('ДР ребенка'), 'ДР ребенка')
+                medical_institutions = data.get('Место оплаты')
+                # INN = data.get('ИНН')
+                # payer_birth = data.get('ДР налогоплательщика')
+                # org_name = data.get('Название организации')
+                # summ = data.get('Сумма расходов')
+                # some_name = data.get('ФИО выдавшего справку')
+                # signature = data.get('Подпись')
+                # print = data.get('Печать')
+
+
+
+
+            if not ("справк" in file_name.lower() and "оплат" in file_name.lower()):
+                return JsonResponse({'message': "Загружен неверный файл"}, status=400)
+
+            if isinstance(kid_birth, JsonResponse): return kid_birth
+
+            try:
+                medical_insurance = MedicalInsurance.objects.get(session_id=_session_id)
+            except Exception:
+                return JsonResponse(
+                    {'message': "Документ 'Свидетельство о рождении' не найден. Пожалуйста, следуйте инструкции"},
+                    status=400)
+
+            father = medical_insurance.father
+            mother = medical_insurance.mother
+
+            if (payer_name != father.name and payer_name != mother.name):
+                return JsonResponse(
+                    {'message': f"Указан другой плательщик. Ожидается: {father.name} или {mother.name}"}, status=400)
+            elif(kid_name != medical_insurance.child_name):
+                return JsonResponse({'message': 'Неверно указаны ФИО ребенка'}, status=400)
+            elif (kid_birth != medical_insurance.child_birth_date):
+                return JsonResponse({'message': 'Неверно указана дата рождения ребенка'}, status=400)
+
+            medical_insurance.medical_organization_data = medical_institutions
+            medical_insurance.save()
+
+            return JsonResponse({'message': 'SUCCESS'}, status=200)
+
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Validation error: {e}")
+            raise ValueError("Не удалось распознать данные, возможно загружен неверный файл")
+        except ValidationError as e:
+            raise ValueError(f"Validation error: {e}")
+
+    # Данные ДМС
+
+    def check_policy(self, _session_id):
+        """
+      Функция для обработки полиса
+      """
+        try:
+            data = json.loads(self.json_data)
+            if data:
+                file_name = data.get('Название')
+                kid_name = data.get('ФИО ребенка')
+                kid_birth = parse_date(data.get('ДР ребенка'), 'ДР ребенка')
+                _policy_number = data.get('Номер полиса')
+                validity_date1 = parse_date(data.get('Начало действия страхования'), 'Начало действия страхования')
+                validity_date2 = parse_date(data.get('Окончание действия страхования'), 'Окончание действия страхования')
+
+
+            if not ("полис" in file_name.lower()):
+                return JsonResponse({'message': "Загружен неверный файл"}, status=400)
+
+            if isinstance(kid_birth, JsonResponse): return kid_birth
+
+            try:
+                medical_insurance = MedicalInsurance.objects.get(session_id=_session_id)
+            except Exception:
+                return JsonResponse(
+                    {'message': "Документ 'Свидетельство о рождении' не найден. Пожалуйста, следуйте инструкции"}, status=400)
+
+            if (kid_name != medical_insurance.child_name):
+                return JsonResponse({'message': 'Неверно указаны ФИО ребенка'}, status=400)
+            if (kid_birth != medical_insurance.child_birth_date):
+                return JsonResponse({'message': 'Неверно указана дата рождения ребенка'}, status=400)
+            if (validity_date2 < datetime.now()):
+                return JsonResponse(
+                    {'message': f"Срок полиса истек"}, status=400)
+
+            medical_insurance.policy_number = _policy_number
+            medical_insurance.is_policy_case = True
+            medical_insurance.save()
+
+            return JsonResponse({'message': 'SUCCESS'}, status=200)
+
         except json.JSONDecodeError:
             raise ValueError("Invalid JSON data")
         except ValidationError as e:
             raise ValueError(f"Validation error: {e}")
 
+    def check_policy_reference(self, _session_id):
+        """
+      Функция для обработки справки от страховой компании
+      """
+        try:
+            data = json.loads(self.json_data)
+            if data:
+                file_name = data.get('Название')
+                payer_name = data.get('ФИО плательщика')
+                kid_name = data.get('ФИО ребенка')
+                kid_birth = parse_date(data.get('ДР ребенка'), 'ДР ребенка')
+                policy_number = data.get('Номер полиса ДМС')
+                validity_date1 = parse_date(data.get('Дата начала страхования'), 'Дата начала страхования')
+                validity_date2 = parse_date(data.get('Дата окончания страхования'), 'Дата окончания страхования')
 
+            if not ("справк" in file_name.lower() and "страхов" in file_name.lower()):
+                return JsonResponse({'message': "Загружен неверный файл"}, status=400)
+
+            if isinstance(kid_birth, JsonResponse): return kid_birth
+            if isinstance(validity_date1, JsonResponse): return validity_date1
+            if isinstance(validity_date2, JsonResponse): return validity_date2
+
+            try:
+                medical_insurance = MedicalInsurance.objects.get(session_id=_session_id)
+            except Exception:
+                return JsonResponse(
+                    {'message': "Документ 'Свидетельство о рождении' не найден. Пожалуйста, следуйте инструкции"}, status=400)
+
+            father = medical_insurance.father
+            mother =medical_insurance.mother
+
+            if (payer_name != father.name or payer_name != mother.name):
+                return JsonResponse(
+                    {'message': f"Указан другой плательщик. Ожидается: {father.name} или {mother.name}"}, status=400)
+            if (kid_name != medical_insurance.child_name):
+                return JsonResponse({'message': 'Неверно указаны ФИО ребенка'}, status=400)
+            if (kid_birth != medical_insurance.child_birth_date):
+                return JsonResponse({'message': 'Неверно указана дата рождения ребенка'}, status=400)
+            if (policy_number != medical_insurance.policy_number):
+                return JsonResponse({'message': 'Неверный полис'}, status=400)
+
+            medical_insurance.contract_period_start = validity_date1
+            medical_insurance.contract_period_end = validity_date2
+
+            medical_insurance.save()
+
+            return JsonResponse({'message': 'SUCCESS'}, status=200)
+
+        except json.JSONDecodeError:
+            raise ValueError("Не удалось распознать данные, возможно загружен неверный файл")
+        except ValidationError as e:
+            raise ValueError(f"Validation error: {e}")

@@ -30,10 +30,11 @@ class MedicalInsurance(models.Model):
     child_birth_date = models.DateField(verbose_name="Дата рождения ребенка",null=True)
     contract_period_start = models.DateField(verbose_name="Начало периода страховой справки",null=True)
     contract_period_end = models.DateField(verbose_name="Конец периода страховой справки",null=True)
-    total_treatment_cost = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Общая сумма лечения",null=True)
+    cheque_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Cумма чека",null=True)
     policy_number = models.CharField(max_length=50, verbose_name="Номер полиса ДМС",null=True)
     medical_organization_data = models.TextField(verbose_name="Данные медорганизации",null=True)
-
+    is_extract_cheque_uploaded = models.BooleanField(default=False, verbose_name="Выписка загружена")  # Новое поле
+    is_policy_case  = models.BooleanField(default=False, verbose_name="Сценарий с полисом")  # Новое поле
 
 class Document(models.Model):
     name = models.CharField(max_length=100)
@@ -47,7 +48,7 @@ class Document(models.Model):
     def save(self, *args, **kwargs):
         if not self.name:
             name, ext = os.path.splitext(self.path.name)
-            self.name = name + "_" +self.session_id
+            self.name = name
 
         final_path = f'backend/documents/{self.session_id or "default_session"}/'
 
