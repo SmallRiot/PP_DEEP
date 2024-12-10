@@ -30,17 +30,21 @@ def remove_dir(session_id,
 
     Document.objects.filter(session_id=session_id).delete()
 
-    medicalInsurance = MedicalInsurance.objects.get(session_id=session_id)
-    medicalInsurance.father.delete()
-    medicalInsurance.mother.delete()
-    medicalInsurance.delete()
+    try:
+        medicalInsurance = MedicalInsurance.objects.get(session_id=session_id)
+        medicalInsurance.father.delete()
+        medicalInsurance.mother.delete()
+        medicalInsurance.delete()
+    except MedicalInsurance.DoesNotExist:
+        return JsonResponse({'message': 'Файлы пользователя уже удалены.'}, status=200)
 
 def parse_date(date_str, date_name):
-    formats = ['%d/%m/%Y', '%m/%d/%Y','%Y-%m-%d', '%d-%m-%Y', '%m-%d-%Y']
+    formats = ['%d/%m/%Y', '%m/%d/%Y','%Y/%m/%d',
+               '%Y-%m-%d', '%d-%m-%Y', '%m-%d-%Y',
+               '%Y.%m.%d', '%d.%m.%Y']
     for fmt in formats:
         try:
             parsed_date = datetime.strptime(date_str, fmt)
-            #parsed_date.strftime('%Y-%m-%d')
             return parsed_date.date()
         except ValueError:
             continue
@@ -131,14 +135,17 @@ class DataInspector:
                 applicant_name = data.get('ФИО заявителя')
                 kid_name = data.get('ФИО ребенка')
                 signature = data.get('Наличие подписи')
-                signature_date = parse_date(data.get('Дата подписи'), 'Дата подписи')
-                kid_birth = parse_date(data.get('ДР ребенка'), 'ДР ребенка')
+                _signature_date = data.get('Дата подписи')
+                _kid_birth = data.get('ДР ребенка')
+
 
             # Извлечение данных из JSON
             if not ( "заявление" in file_name.lower()):
                 return JsonResponse({'message': "Загружен неверный файл"}, status=400)
 
+            signature_date = parse_date(_signature_date, 'Дата подписи')
             if isinstance(signature_date, JsonResponse): return signature_date
+            kid_birth = parse_date(_kid_birth, 'ДР ребенка')
             if isinstance(kid_birth, JsonResponse): return kid_birth
 
             try:
@@ -184,11 +191,12 @@ class DataInspector:
                 father_name = data.get('ФИО отца')
                 mother_name = data.get('ФИО матери')
                 child_name = data.get('ФИО ребенка')
-                child_birth_date = parse_date(data.get('ДР ребенка'), 'ДР ребенка')
+                _child_birth_date = data.get('ДР ребенка')
 
             if(file_name != "СВИДЕТЕЛЬСТВО О РОЖДЕНИИ"):
                 return JsonResponse({'message': "Загружен неверный файл"}, status=400)
 
+            child_birth_date = parse_date(_child_birth_date, 'ДР ребенка')
             if isinstance(child_birth_date, JsonResponse): return child_birth_date
 
             clear_exist_medical_insurance(_session_id)
@@ -288,7 +296,7 @@ class DataInspector:
                 file_name = data.get('Название')
                 payment_method = data.get('Способ оплаты')
                 payer_name = data.get('ФИО плательщика')
-                payment_date = parse_date(data.get('Дата оплаты'), 'Дата оплаты')
+                _payment_date = data.get('Дата оплаты')
                 amount = data.get('Сумма')
                 medical_institutions = data.get('Место оплаты')
                 is_signature = data.get('Подпись')
@@ -297,6 +305,7 @@ class DataInspector:
             if not ("чек" in file_name.lower()):
                 return JsonResponse({'message': "Загружен неверный файл"}, status=400)
 
+            payment_date = parse_date(_payment_date, 'Дата оплаты')
             if isinstance(payment_date, JsonResponse): return payment_date
 
             try:
@@ -352,8 +361,8 @@ class DataInspector:
                 file_name = data.get('Название')
                 payer_name = data.get('ФИО налогоплательщика')
                 kid_name = data.get('ФИО ребенка')
-                kid_birth = parse_date(data.get('ДР ребенка'), 'ДР ребенка')
-                medical_institutions = data.get('Место оплаты')
+                _kid_birth = data.get('ДР ребенка')
+                medical_institutions = data.get('Название организации')
                 # INN = data.get('ИНН')
                 # payer_birth = data.get('ДР налогоплательщика')
                 # org_name = data.get('Название организации')
@@ -368,6 +377,7 @@ class DataInspector:
             if not ("справк" in file_name.lower() and "оплат" in file_name.lower()):
                 return JsonResponse({'message': "Загружен неверный файл"}, status=400)
 
+            kid_birth = parse_date(_kid_birth, 'ДР ребенка')
             if isinstance(kid_birth, JsonResponse): return kid_birth
 
             try:
@@ -410,16 +420,22 @@ class DataInspector:
             if data:
                 file_name = data.get('Название')
                 kid_name = data.get('ФИО ребенка')
-                kid_birth = parse_date(data.get('ДР ребенка'), 'ДР ребенка')
+                _kid_birth =data.get('ДР ребенка')
                 _policy_number = data.get('Номер полиса')
-                validity_date1 = parse_date(data.get('Начало действия страхования'), 'Начало действия страхования')
-                validity_date2 = parse_date(data.get('Окончание действия страхования'), 'Окончание действия страхования')
+
+                _validity_date1 = data.get('Начало действия страхования')
+                _validity_date2 = data.get('Окончание действия страхования')
 
 
             if not ("полис" in file_name.lower()):
                 return JsonResponse({'message': "Загружен неверный файл"}, status=400)
 
+            kid_birth = parse_date(_kid_birth, 'ДР ребенка')
             if isinstance(kid_birth, JsonResponse): return kid_birth
+            validity_date1 = parse_date(_validity_date1, 'Начало действия страхования')
+            if isinstance(validity_date1, JsonResponse): return validity_date1
+            validity_date2 = parse_date(_validity_date2, 'Окончание действия страхования')
+            if isinstance(validity_date2, JsonResponse): return validity_date2
 
             try:
                 medical_insurance = MedicalInsurance.objects.get(session_id=_session_id)
@@ -456,16 +472,19 @@ class DataInspector:
                 file_name = data.get('Название')
                 payer_name = data.get('ФИО плательщика')
                 kid_name = data.get('ФИО ребенка')
-                kid_birth = parse_date(data.get('ДР ребенка'), 'ДР ребенка')
+                _kid_birth =data.get('ДР ребенка')
                 policy_number = data.get('Номер полиса ДМС')
-                validity_date1 = parse_date(data.get('Дата начала страхования'), 'Дата начала страхования')
-                validity_date2 = parse_date(data.get('Дата окончания страхования'), 'Дата окончания страхования')
+                _validity_date1 = data.get('Дата начала страхования')
+                _validity_date2 = data.get('Дата окончания страхования')
 
             if not ("справк" in file_name.lower() and "страхов" in file_name.lower()):
                 return JsonResponse({'message': "Загружен неверный файл"}, status=400)
 
+            kid_birth = parse_date(_kid_birth, 'ДР ребенка')
             if isinstance(kid_birth, JsonResponse): return kid_birth
+            validity_date1 = parse_date(_validity_date1, 'Дата начала страхования')
             if isinstance(validity_date1, JsonResponse): return validity_date1
+            validity_date2 = parse_date(_validity_date2, 'Дата окончания страхования')
             if isinstance(validity_date2, JsonResponse): return validity_date2
 
             try:

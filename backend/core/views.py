@@ -211,7 +211,12 @@ class DocumentViewSet(viewsets.ModelViewSet):
         img_path = saved_instance.path.name
         if(ext == '.pdf'):
             sourse_id = load_pdf(access_token, img_path)
-            info = get_info(access_token, sourse_id)
+            if ("statement" in saved_instance.name):
+                info = get_statement_info(access_token, sourse_id)
+            elif ("cert_about_paid_franchise_VMI" in saved_instance.name):
+                info = get_reference_six_info(access_token, sourse_id)
+            else:
+                info = get_info(access_token, sourse_id)
         else:
             sourse_id = load_img(access_token, img_path)
 
@@ -226,11 +231,15 @@ class DocumentViewSet(viewsets.ModelViewSet):
             if (response.status_code == 400):
                 delete_garbage_file(saved_instance.id)
                 return response
-        elif ("statement" in saved_instance.name):
-            res = statement_response(info, auth_token)
+        elif ("statement" in saved_instance.name and ext == '.pdf'):
+            if (ext == '.pdf'):
+                res = statement_response(info, auth_token)
+                inspector = DataInspector(json.dumps(res))
+                response = inspector.check_statement(session_id)
+            else:
+                response = JsonResponse({'message': "Неверный формат файла, ожидается: PDF"}, status=400)
 
-            inspector = DataInspector(json.dumps(res))
-            response = inspector.check_statement(session_id)
+
             if (response.status_code == 400):
                 delete_garbage_file(saved_instance.id)
                 return response
@@ -245,10 +254,14 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 delete_garbage_file(saved_instance.id)
                 return response
         elif ("cert_of_payment_med_services" in saved_instance.name):
-            res = double_page_response(info, auth_token)
+            if(ext == '.pdf'):
+                res = double_page_response(info, auth_token)
+                inspector = DataInspector(json.dumps(res))
+                response = inspector.check_payment_reference(session_id)
+            else:
+                response = JsonResponse({'message': "Неверный формат файла, ожидается: PDF"}, status=400)
 
-            inspector = DataInspector(json.dumps(res))
-            response = inspector.check_payment_reference(session_id)
+
             if (response.status_code == 400):
                 delete_garbage_file(saved_instance.id)
                 return response
@@ -264,10 +277,12 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 delete_garbage_file(saved_instance.id)
                 return response
         elif ("cert_about_paid_franchise_VMI" in saved_instance.name):
-            res = reference_six_response(info, auth_token)
-
-            inspector = DataInspector(json.dumps(res))
-            response = inspector.check_policy_reference(session_id)
+            if(ext == '.pdf'):
+                res = reference_six_response(info, auth_token)
+                inspector = DataInspector(json.dumps(res))
+                response = inspector.check_policy_reference(session_id)
+            else:
+                response = JsonResponse({'message': "Неверный формат файла, ожидается: PDF"}, status=400)
             if (response.status_code == 400):
                 delete_garbage_file(saved_instance.id)
                 return response
@@ -293,7 +308,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
             if (response.status_code == 400):
                 delete_garbage_file(saved_instance.id)
                 return response
-        print("Hell0")
         # if ("marriage_certificate" in saved_instance.name):
         #     # if (ext == '.pdf'):
         #     #     res = marriage_response(info, auth_token)
@@ -429,7 +443,9 @@ class UserDataView(APIView):
             session_id=request.session.session_key
             base_folder = os.path.join(settings.MEDIA_ROOT, 'backend/documents', session_id)
 
-            remove_dir(session_id,base_folder)
+            response = remove_dir(session_id, base_folder)
+            if response:
+                return response
             return JsonResponse({'message': 'Success'}, status=200)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
