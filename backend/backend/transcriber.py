@@ -163,6 +163,38 @@ def get_statement_info(access_token, img_id):
   else:
     return response.status_code
 
+def get_reference_six_info(access_token, img_id):
+  
+  url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+
+  payload = json.dumps({
+    "model": "GigaChat-Max",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Прочитай данный текст справки и выведи из него всю важную информацию в виде списка, а именно: ФИО плательщика, ФИО ребенка, ДР ребенка, Дата начала страхования, Дата окончания страхования, Номер полиса по которому произведена оплата.",
+        "attachments": [
+          img_id
+        ]
+      }
+    ],
+    "stream": False,
+    "update_interval": 0
+  })
+
+  headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + access_token
+  }
+
+  response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+  delete_img(access_token, img_id)
+
+  if response.status_code == 200:
+    return response.json()['choices'][0]['message']['content']
+  else:
+    return response.status_code
+
 def get_info(access_token, img_id):
   
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
@@ -271,7 +303,7 @@ def reference_six_response(user_content, auth_token):
 
   messages = [
       SystemMessage(
-          content="Ты валидатор данных, который получает информацию и выводит ответ в json-формате без указания, что это json по полям на выходе. В ответе не должно быть ничего лишнего, только json. В поле Название всегда пиши Справка от страховой компании. Даты переводи в формат dd/mm/yyyy Выведи только следующие поля: Название, ФИО плательщика, ФИО ребенка, ДР ребенка, Дата начала страхования, Дата окончания страхования, Номер полиса ДМС."
+          content="Ты валидатор данных, который получает информацию и выводит ответ в json-формате без указания, что это json по полям на выходе. В ответе не должно быть ничего лишнего, только json. В поле Название всегда пиши Справка от страховой компании. Даты переводи в формат dd/mm/yyyy. Для номера полиса ДМС используй номер полиса, по которому произведена оплата, он находится после указания №. Выведи только следующие поля: Название, ФИО плательщика, ФИО ребенка, ДР ребенка, Дата начала страхования, Дата окончания страхования, Номер полиса ДМС."
     )
   ] 
 
@@ -809,4 +841,3 @@ def process_insurance(access_token, img_id):
             return {"error": f"Ошибка обработки JSON: {str(e)}", "response": process_response.json()}
     else:
         return {"error": f"Ошибка запроса на преобразование: {process_response.status_code}", "details": process_response.text}
-
