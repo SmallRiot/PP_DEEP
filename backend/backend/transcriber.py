@@ -222,6 +222,39 @@ def get_reference_six_info(access_token, img_id):
   else:
     return response.status_code
 
+def get_reciept_info(access_token, img_id):
+  
+  url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+
+  payload = json.dumps({
+    "model": "GigaChat-Max",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Ты валидатор данных, который получает информацию и образует json-файл по полям на выходе. Даты переводи в формат dd/mm/yyyy. В НАЗВАНИИ ВСЕГДА УКАЗЫВАЙ ЧЕК - Чек. В сумме укажи только число, указанное в итоговой сумме к оплате в формате float. В поле Место укажи название компании, в которой произведена оплата. ВЫВЕДИ ТОЛЬКО СЛЕДУЮЩИЕ ПОЛЯ: Название, Способ оплаты, ФИО плтельщика, Дата оплаты, Сумма, Место оплаты, Подпись, Печать.",
+        "attachments": [
+          img_id
+        ]
+      }
+    ],
+    "stream": False,
+    "update_interval": 0
+  })
+
+  headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + access_token
+  }
+
+  response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+  delete_img(access_token, img_id)
+
+  if response.status_code == 200:
+    return extract_content(response.json()['choices'][0]['message']['content'])
+  else:
+    return response.status_code
+ 
+
 def get_info(access_token, img_id):
   
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
