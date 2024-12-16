@@ -158,6 +158,38 @@ def extract_content(s):
 
 """PDF методы"""
 
+def get_marriage_info(access_token, img_id):
+  
+  url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+
+  payload = json.dumps({
+    "model": "GigaChat-Max",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Прочитай данный текст свидетельства о браке и выведи из него всю важную информацию в виде списка, а именно: Название, ФИО мужа с использованием присвоенной фамилии, ФИО жены с присвоенной фамилией",
+        "attachments": [
+          img_id
+        ]
+      }
+    ],
+    "stream": False,
+    "update_interval": 0
+  })
+
+  headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + access_token
+  }
+
+  response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+  delete_img(access_token, img_id)
+
+  if response.status_code == 200:
+    return response.json()['choices'][0]['message']['content']
+  else:
+    return response.status_code
+
 def get_statement_info(access_token, img_id):
   
   url = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
@@ -329,6 +361,8 @@ def marriage_response(user_content, auth_token):
   messages.append(res)
   return json.loads(extract_content(res.content))
 
+
+
 """Заявление"""
 def statement_response(user_content, auth_token):
 
@@ -341,7 +375,7 @@ def statement_response(user_content, auth_token):
 
   messages = [
       SystemMessage(
-          content="Ты валидатор данных, который получает информацию и выдает ответ в json-формате, без указания, что это json по полям на выходе. В поле Название всегда пиши Заявление. Даты переводи в формат dd/mm/yyyy Выведи только следующие поля строго с такими же названиями: Название, ФИО заявителя, ФИО ребенка, ДР ребенка, Дата подписи, Наличие подписи."
+          content="""Ты валидатор данных, который получает информацию и выдает ответ в json-формате, без указания, что это json по полям на выходе. В поле Название всегда пиши Заявление. Даты переводи в формат dd/mm/yyyy Выведи только следующие поля строго с такими же названиями: Название, ФИО заявителя, ФИО ребенка, ДР ребенка, Дата подписи, Наличие подписи. Пример результата: {"Название": "Заявление", "ФИО заявителя": "Иванов Иван Иванович", "ФИО ребенка": "Иванов Иван Иванович", "ДР ребенка": "10/10/2010", "Дата подписи": "10/10/2024", "Наличие подписи": true}"""
     )
   ] 
 
